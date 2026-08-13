@@ -4,93 +4,79 @@
 
 ```text
 chsh -s /usr/bin/fish
-# → Password: chsh: PAM: Authentication failure
+# → chsh: PAM: Authentication failure
 ```
-
-Use elevated chsh (passwordless sudo is typical on penguin):
 
 ```bash
 sudo chsh -s /usr/bin/fish "$USER"
 ```
 
-## grok: command not found (in fish)
+Passwordless sudo is typical on penguin.
 
-Login shell is fish; bashrc PATH does not apply. CROS-004 hardens this:
+## fish: Unsupported use of '='
+
+Bash agent snippets fail in fish:
+
+```fish
+# wrong
+eval "$(ssh-agent -s)"
+# right
+eval (ssh-agent -c)
+```
+
+See **CHG-008**.
+
+## agent CLI: command not found
+
+Login shell is fish; bashrc PATH may not apply:
 
 ```bash
 ./scripts/install-grok.sh
-# or just recovery:
 ensure-grok
-cat ~/.config/fish/conf.d/grok.fish
-source ~/.config/fish/conf.d/grok.fish
+# updates later: grok update   — not curl every reboot
 ```
 
-**Do not** re-run `curl | bash` every reboot. Updates: `grok update`.
+## Tide icons are tofu
 
-Minimal PATH still works after CROS-004:
+Powerline fonts fix separators; full icon sets need a Nerd Font in Alacritty (`font.normal.family`). Planned: CHG-009+.
+
+## Alacritty missing from launcher
 
 ```bash
-env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$HOME" grok --version
+alacritty --version
+ls /usr/share/applications/Alacritty.desktop
 ```
 
-## Tide icons are tofu / missing
+Restart Linux from Settings if the desktop DB is stale.
 
-Install a Nerd Font (CROS-005) into `~/.local/share/fonts` and set `font.normal.family` in `alacritty.toml`. Powerline fonts alone fix separators, not full icon sets.
+## Island deb not found
 
-## Alacritty won’t start under Crostini
+Stage via **Linux files** or Share with Linux — My files is not visible by default.
 
 ```bash
-alacritty -e true   # should exit 0
-echo "DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY"
+./scripts/install-island.sh /path/to/island-browser-stable_*.deb
 ```
 
-Launch from the Chrome OS **Linux apps** launcher rather than expecting Hyprland Super+Return.
+## Antigravity: no window / blank UI
 
-## Island `.deb` not found
-
-My files is not mounted until shared:
-
-1. Drag the `.deb` into **Linux files**, or
-2. Right-click Downloads → **Share with Linux** → `/mnt/chromeos/MyFiles/Downloads/`
+GPU process dies without DRM in the VM. Use the kit wrapper:
 
 ```bash
-sudo apt-get install -y /path/to/island-browser-stable_*.deb
-# not: dpkg -i   (then apt-get install -f if you already did)
+./scripts/install-antigravity.sh
+antigravity &   # → antigravity-crostini flags
 ```
 
-Need ~700 MiB free. Delete the staged `.deb` after install.
+## Disk full on ~10 GiB
 
-## Island / Antigravity blank or crash
+Resize Linux disk (CHG-007) before Island + Antigravity + WebKit.
 
-Crostini often logs `drmGetDevices2` noise (no GPU node).
+## Permission denied (publickey) for GitHub
 
-| App | This Flex host | Fallback |
-|-----|----------------|----------|
-| Island | no flags needed | `island-browser --disable-gpu &` |
-| Antigravity | **wrapper required** | `antigravity-crostini` (X11, `--disable-gpu`, `--no-sandbox`) |
-
-If `apt upgrade` overwrites `antigravity.desktop`, re-point `Exec=` at `/usr/local/bin/antigravity-crostini`.
-
-## apt Antigravity looks “old”
-
-The official apt package is the **1.x** VS Code-family IDE (seed: pkg 1.23.2 / app 1.107.0), not the 2.0 hub or IDE 2.1 tarballs. Intended. Update in-app or via apt after first open.
-
-## apt debconf without a TTY
-
-```bash
-export DEBIAN_FRONTEND=noninteractive
+```fish
+ssh-add -l
+eval (ssh-agent -c)
+ssh-add ~/.ssh/id_ed25519
+ssh -T git@github.com
 ```
 
-## pkill kills the agent wrapper
-
-Prefer exact name match:
-
-```bash
-pgrep -x alacritty
-pgrep -x grok
-# kill by PID, not pkill -f grok / pkill -f alacritty
-```
-
-## Disk full
-
-Resize Linux disk in Chrome OS Settings. Island + Antigravity want a resized disk (seed: 213 GiB).
+Confirm the public key is on GitHub → Settings → SSH keys.

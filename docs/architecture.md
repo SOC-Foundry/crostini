@@ -1,54 +1,53 @@
-# Architecture — Chrome OS Flex · Crostini · Grok
+# Architecture
 
 ## Three layers
 
 ```text
-┌─────────────────────────────────────────────┐
-│  Chrome OS Flex (host)                      │
-│  · Window manager, audio, GPU, Files app    │
-│  · Linux disk size setting (seed: 213 GiB)  │
-├─────────────────────────────────────────────┤
-│  Crostini VM (penguin / Debian)             │
-│  · apt packages, ~/.config, login shell     │
-│  · Alacritty, fish, Tide, Island, Antigravity
-│  · Survives host reboot (unless Linux Remove)
-├─────────────────────────────────────────────┤
-│  Grok Build (~/.grok)                       │
-│  · CLI binary + auth.json + sessions        │
-│  · Persistent on /dev/vdb                   │
-│  · Discoverable via profile.d + /usr/local  │
-└─────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│  Chrome OS Flex (or Chrome OS) — host                    │
+│  · Windowing, power, Files app, verified updates         │
+│  · Linux disk size control plane                         │
+├──────────────────────────────────────────────────────────┤
+│  Crostini VM — hostname penguin · Debian                 │
+│  · apt · ~/.config · login shell · Linux apps launcher   │
+│  · Persistent across host reboot (until Linux is Removed)│
+├──────────────────────────────────────────────────────────┤
+│  Operator desktop (user-space)                           │
+│  · fish · Alacritty · browsers · IDE · git SSH · agents  │
+└──────────────────────────────────────────────────────────┘
 ```
 
-## Persistence model
+**Thesis:** the host stays thin; the **VM is the desktop** an Arch-minded developer actually uses.
+
+## Persistence
 
 | Asset | Survives Chrome OS reboot? |
 |-------|----------------------------|
-| Crostini rootfs packages | **Yes** (unless Linux is removed or disk wiped) |
-| `~/.config/fish`, Alacritty | **Yes** |
-| `~/.grok` (binary, auth, sessions) | **Yes** |
-| `PATH` if only set in a one-off shell | **No** — fixed by CROS-004 hooks |
-| After **Settings → Developers → Linux → Remove** | **No** — full reinstall |
+| apt packages, `~/.config`, `~/.local` | **Yes** |
+| `~/.ssh`, git clones under `$HOME` | **Yes** |
+| Optional agent tree `~/.grok` | **Yes** (on Crostini disk) |
+| PATH if only set in a one-off shell | **No** — see CHG-005 hooks |
+| After **Linux → Remove** | **No** — container gone |
 
-## Display & input
+## Display
 
-- Sommelier bridges Wayland/X: `DISPLAY=:0`, `WAYLAND_DISPLAY=wayland-0`
-- Alacritty and Island run as Linux apps under the Chrome OS launcher
-- Clipboard: OSC52 in Alacritty (`osc52 = "CopyPaste"`)
-- Electron (Antigravity) needs the Crostini wrapper: X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
-- Island on this Flex host needed **no** extra GPU flags
+- Sommelier bridges Wayland/X (`DISPLAY=:0`, often `WAYLAND_DISPLAY=wayland-0`)
+- Linux `.desktop` entries appear in the Chrome OS launcher
+- Alacritty: OSC52 clipboard (`osc52 = "CopyPaste"`)
+- Electron (Antigravity): use Crostini wrapper — X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
+- Island on seed Flex host: no extra GPU flags required
 
-## Shared files (CROS-007 / 008)
+## Shared files
 
-Chrome OS **My files** is not in penguin until you:
+Chrome OS **My files** is not in the VM until:
 
-1. Drag into **Linux files**, or
-2. Right-click a folder → **Share with Linux** → `/mnt/chromeos/MyFiles/…`
+1. Drag into **Linux files**, or  
+2. Right-click → **Share with Linux** → paths under `/mnt/chromeos/…`
 
-## What we do not own
+## Boundaries
 
-- Hyprland / host window manager binds
-- Host audio (WirePlumber lives on Chrome OS)
-- Partitioning the virtual disk as LUKS/XFS `/data`
-
-Stay in the container. Resize disk from **Chrome OS Settings → Linux**.
+| Own in the VM | Do not own |
+|---------------|------------|
+| Shell, terminal, apt apps | Host window manager / Hyprland |
+| User config under `$HOME` | Host audio policy |
+| Crostini disk contents | Chrome OS system partitions |
