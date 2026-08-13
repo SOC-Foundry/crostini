@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# crostini-grok · CROS-004 — recovery helper
+# Reports "already installed" when grok is present. Curls only if missing.
+set -euo pipefail
+
+HOME_DIR="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
+
+if command -v grok >/dev/null 2>&1; then
+  printf 'already installed: %s (%s)\n' "$(command -v grok)" "$(grok --version 2>/dev/null || echo ok)"
+  exit 0
+fi
+
+if [[ -x "$HOME_DIR/.grok/bin/grok" ]]; then
+  printf 'already installed: %s\n' "$HOME_DIR/.grok/bin/grok"
+  "$HOME_DIR/.grok/bin/grok" --version 2>/dev/null || true
+  exit 0
+fi
+
+if [[ -x /usr/local/bin/grok ]]; then
+  printf 'already installed: /usr/local/bin/grok\n'
+  /usr/local/bin/grok --version 2>/dev/null || true
+  exit 0
+fi
+
+printf 'grok missing — running official installer\n'
+curl -fsSL https://x.ai/cli/install.sh | bash
+exit $?

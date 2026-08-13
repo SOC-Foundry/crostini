@@ -1,0 +1,67 @@
+# crostini-grok · CROS-003 — Alacritty startup banner → fish
+# __HOME__ is rewritten by scripts/bootstrap.sh to the real home path.
+
+[general]
+live_config_reload = true
+
+[env]
+TERM = "alacritty"
+
+[window]
+padding = { x = 12, y = 10 }
+dynamic_padding = true
+decorations = "Full"
+startup_mode = "Windowed"
+opacity = 1.0
+
+[scrolling]
+history = 10000
+
+[font]
+size = 12.0
+
+[font.normal]
+family = "DejaVu Sans Mono"
+style = "Regular"
+
+[font.bold]
+family = "DejaVu Sans Mono"
+style = "Bold"
+
+# Prefer a Nerd Font when CROS-005 is applied, e.g.:
+# family = "MesloLGS NF"
+
+[colors.primary]
+background = "#0a0b0d"
+foreground = "#e8eaef"
+
+[colors.normal]
+black = "#0a0b0d"
+red = "#c45c5c"
+green = "#5aaf7a"
+yellow = "#c9a227"
+blue = "#5b9fd4"
+magenta = "#8b7ec8"
+cyan = "#5aabb8"
+white = "#c8ccd4"
+
+[colors.bright]
+black = "#6b7385"
+red = "#e07a7a"
+green = "#7bc996"
+yellow = "#e0c04a"
+blue = "#7db8e0"
+magenta = "#a89ad8"
+cyan = "#7ac4d0"
+white = "#f0f2f5"
+
+[terminal]
+osc52 = "CopyPaste"
+
+[terminal.shell]
+program = "/usr/bin/fish"
+args = [
+  "-l",
+  "-c",
+  "uname -a && ip -4 -br addr && echo $0 && lsblk -f && fastfetch; cd __HOME__/projects; exec fish -l",
+]
