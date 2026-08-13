@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Antigravity
+Comment=Experience liftoff (Google Antigravity IDE via apt; auto-update enabled)
+Exec=/usr/local/bin/antigravity-crostini %F
+Icon=antigravity
+Type=Application
+StartupNotify=true
+StartupWMClass=Antigravity
+Categories=TextEditor;Development;IDE;
+Keywords=vscode;antigravity;ide;

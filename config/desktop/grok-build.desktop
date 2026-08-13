@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Grok Build
+Comment=Grok Build terminal coding agent (xAI)
+Exec=alacritty -e env PATH=/usr/local/bin:/usr/bin:/bin grok
+Icon=utilities-terminal
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true

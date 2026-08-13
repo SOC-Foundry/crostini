@@ -1,0 +1,3 @@
+# vendor browser packages — do not commit
+*.deb
+island-browser-stable_*.deb
