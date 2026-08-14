@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# crostini · CHG-011 — Alacritty one-shot banner, then fish in ~/projects/sf
+set -u
+HOME_DIR="${HOME:-$(getent passwd "$(id -un)" | cut -d: -f6)}"
+LAND="${HOME_DIR}/projects/sf"
+HOST_SPECS="${HOME_DIR}/.config/crostini/host-specs.txt"
+mkdir -p "$LAND"
+
+uname -a
+command -v ip >/dev/null && ip -4 -br addr
+echo "$0"
+command -v lsblk >/dev/null && lsblk -f
+
+echo
+echo "=== VM (penguin) ==="
+if command -v inxi >/dev/null 2>&1; then
+  inxi -c 0 -MCzm
+else
+  echo "inxi missing — CHG-010: apt install --no-install-recommends inxi dmidecode"
+fi
+
+echo
+echo "=== HOST (Chrome OS Flex) ==="
+if [[ -f "$HOST_SPECS" ]]; then
+  cat "$HOST_SPECS"
+else
+  echo "No ${HOST_SPECS}"
+  echo "crosh (Ctrl+Alt+T): battery_test 1 · storage_status"
+fi
+
+echo
+command -v fastfetch >/dev/null 2>&1 && fastfetch
+
+cd "$LAND" || exit 1
+exec /usr/bin/fish -l

@@ -4,8 +4,8 @@
 |---|---|
 | Host | `penguin` · Chrome OS Flex · Debian 13 Crostini · Dell Latitude 7200 |
 | Kit | this repo · `~/projects/sf/crostini` |
-| Applied | **CHG-001 … CHG-008** (see README changelog) |
-| Next free | **CHG-009** |
+| Applied | **CHG-001 … CHG-011** (see README changelog) |
+| Next free | **CHG-012** |
 
 ## Grok resume (if using Grok Build)
 
@@ -24,12 +24,14 @@ Historical omarchy-cwd session (pre-kit focus): `019ff5cd-60a4-7ba3-980c-ad03513
 |-----------|--------|
 | Disk | 213 GiB btrfs |
 | Shell | fish + Tide + done |
-| Terminal | Alacritty + banner |
+| Terminal | Alacritty + banner (inxi VM/host) → `~/projects/sf` |
 | Browser | Island 151.x |
 | Chat | wasistlos |
 | IDE | antigravity (apt) + crostini wrapper · `agy` |
 | Agent CLI | grok (optional permanent) |
+| Music | spotify-client 1.2.95.453 + crostini wrapper |
 | Git | ed25519 SSH → GitHub |
+| Hardware probe | inxi 3.3.38 + dmidecode · `inxi -MC` (no sudo) |
 
 ## Agent policy
 

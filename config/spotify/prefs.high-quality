@@ -1,0 +1,6 @@
+# CHG-009 — Very High (~320 kbit/s). Enumeration 4. Premium required.
+# Merged into ~/.config/spotify/Users/*/prefs after first sign-in.
+audio.play_bitrate_non_metered_migrated=true
+audio.sync_bitrate_enumeration=4
+audio.play_bitrate_enumeration=4
+audio.play_bitrate_non_metered_enumeration=4

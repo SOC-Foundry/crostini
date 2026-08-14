@@ -38,7 +38,7 @@ ensure-grok
 
 ## Tide icons are tofu
 
-Powerline fonts fix separators; full icon sets need a Nerd Font in Alacritty (`font.normal.family`). Planned: CHG-009+.
+Powerline fonts fix separators; full icon sets need a Nerd Font in Alacritty (`font.normal.family`). Planned: CHG-011+.
 
 ## Alacritty missing from launcher
 
@@ -65,6 +65,67 @@ GPU process dies without DRM in the VM. Use the kit wrapper:
 ./scripts/install-antigravity.sh
 antigravity &   # → antigravity-crostini flags
 ```
+
+## Spotify missing from Linux apps
+
+Garcon only lists a `.desktop` that exists. Confirm:
+
+```bash
+ls /usr/share/applications/spotify.desktop ~/.local/share/applications/spotify.desktop
+grep ^Exec= /usr/share/applications/spotify.desktop
+# want: Exec=/usr/local/bin/spotify-crostini %U
+```
+
+Then **Settings → Developers → Linux → Restart**. Same refresh as a missing Alacritty icon.
+
+## Spotify: no window / blank UI
+
+Same CEF/DRM class as Antigravity. Launch the wrapper, not `/usr/bin/spotify` directly:
+
+```bash
+./scripts/install-spotify.sh
+spotify &   # → /usr/local/bin/spotify-crostini
+pgrep -a spotify
+```
+
+## Spotify: window up, no sound
+
+Do **not** apt-install `pipewire-audio` or replace Pulse. Seed already has PipeWire-Pulse.
+
+```bash
+pactl info
+pactl get-default-sink
+# expect a real sink, not auto_null
+```
+
+Wrapper must pass `--audio-api=pulseaudio`. Chrome OS volume / mute is host-owned.
+
+Very High (~320 kbit/s) is `audio.play_bitrate_enumeration=4` in `~/.config/spotify/Users/*/prefs` (Premium). Re-run `./scripts/install-spotify.sh` after first sign-in, or set **Settings → Audio Quality → Very high**. Do not commit that prefs file.
+
+## inxi: command not found
+
+```bash
+sudo apt-get install -y --no-install-recommends inxi dmidecode
+inxi -c 0 -MC
+```
+
+## sudo asks for a password / I cannot sudo
+
+Crostini login often has a **locked** password (`passwd -S` shows `L`). Interactive `sudo` then fails. The probe does **not** need sudo:
+
+```bash
+inxi -MC
+```
+
+Apt/bootstrap still need a one-time rootful install. This seed has `/etc/sudoers.d/10-no-password` so some shells can `sudo -n`; do not assume that. Do not set a password unless you choose to.
+
+## inxi serial says superuser required
+
+Expected without sudo. CPU and crosvm product still print. Ignore serial.
+
+## inxi says ChromiumOS / crosvm, not Latitude
+
+Correct. That is the VM chassis. CPU (`-C`) is the real i7-8665U. For SSD / battery / model: **Settings → About ChromeOS**, `chrome://system`, or crosh `storage_status` / `battery_test 1`. Do not install `lshw` for this.
 
 ## Disk full on ~10 GiB
 

@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Spotify
+Comment=Spotify desktop (Crostini wrapper)
+Exec=/usr/local/bin/spotify-crostini %U
+TryExec=/usr/local/bin/spotify-crostini
+Icon=spotify-client
+Type=Application
+Terminal=false
+StartupNotify=true
+StartupWMClass=spotify
+Categories=Audio;Music;Player;AudioVideo;
+MimeType=x-scheme-handler/spotify;

@@ -11,7 +11,7 @@ HOME_DIR="${HOME:-$(getent passwd "$USER_NAME" | cut -d: -f6)}"
 CONFIG_SRC="$ROOT/config"
 FISH_CONF_D="$HOME_DIR/.config/fish/conf.d"
 ALACRITTY_DIR="$HOME_DIR/.config/alacritty"
-PROJECTS_DIR="$HOME_DIR/projects"
+PROJECTS_DIR="$HOME_DIR/projects/sf"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 
 log() { printf '==> %s\n' "$*"; }
@@ -44,6 +44,8 @@ install_packages() {
     fonts-dejavu-core \
     curl \
     ca-certificates
+  # CHG-010 — skip Recommends (mesa-utils, lm-sensors) unused by `inxi -MC`
+  sudo apt-get install -y --no-install-recommends inxi dmidecode
 }
 
 backup_fish() {
@@ -120,9 +122,24 @@ install_configs() {
     install -m 644 "$CONFIG_SRC/fish/conf.d/crostini.fish" "$FISH_CONF_D/crostini.fish"
   fi
 
+  mkdir -p "$HOME_DIR/.local/bin" "$HOME_DIR/.config/crostini"
+  if [[ -f "$CONFIG_SRC/bin/alacritty-crostini-banner" ]]; then
+    install -m 755 "$CONFIG_SRC/bin/alacritty-crostini-banner" \
+      "$HOME_DIR/.local/bin/alacritty-crostini-banner"
+    log "banner → $HOME_DIR/.local/bin/alacritty-crostini-banner"
+  fi
+  if [[ -f "$CONFIG_SRC/alacritty/host-specs.txt" ]]; then
+    local host_dest="$HOME_DIR/.config/crostini/host-specs.txt"
+    if [[ -f "$host_dest" ]]; then
+      cp -a "$host_dest" "${host_dest}.bak.chg011.${STAMP}"
+    fi
+    install -m 644 "$CONFIG_SRC/alacritty/host-specs.txt" "$host_dest"
+    log "host specs → $host_dest"
+  fi
+
   if [[ -f "$CONFIG_SRC/alacritty/alacritty.toml" ]]; then
     if [[ -f "$ALACRITTY_DIR/alacritty.toml" ]]; then
-      cp -a "$ALACRITTY_DIR/alacritty.toml" "$ALACRITTY_DIR/alacritty.toml.bak.${STAMP}"
+      cp -a "$ALACRITTY_DIR/alacritty.toml" "$ALACRITTY_DIR/alacritty.toml.bak.chg011.${STAMP}"
     fi
     log "Installing alacritty.toml (user home expanded)"
     sed "s|__HOME__|${HOME_DIR}|g" "$CONFIG_SRC/alacritty/alacritty.toml" \

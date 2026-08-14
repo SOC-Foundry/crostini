@@ -1,4 +1,4 @@
-# crostini-grok · CROS-003 — Alacritty startup banner → fish
+# crostini · CHG-011 — Alacritty banner (inxi VM + host specs) → ~/projects/sf
 # __HOME__ is rewritten by scripts/bootstrap.sh to the real home path.
 
 [general]
@@ -59,9 +59,4 @@ white = "#f0f2f5"
 osc52 = "CopyPaste"
 
 [terminal.shell]
-program = "/usr/bin/fish"
-args = [
-  "-l",
-  "-c",
-  "uname -a && ip -4 -br addr && echo $0 && lsblk -f && fastfetch; cd __HOME__/projects; exec fish -l",
-]
+program = "__HOME__/.local/bin/alacritty-crostini-banner"

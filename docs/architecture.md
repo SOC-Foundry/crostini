@@ -13,7 +13,7 @@
 │  · Persistent across host reboot (until Linux is Removed)│
 ├──────────────────────────────────────────────────────────┤
 │  Operator desktop (user-space)                           │
-│  · fish · Alacritty · browsers · IDE · git SSH · agents  │
+│  · fish · Alacritty · browsers · chat · music · IDE · git│
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -34,8 +34,14 @@
 - Sommelier bridges Wayland/X (`DISPLAY=:0`, often `WAYLAND_DISPLAY=wayland-0`)
 - Linux `.desktop` entries appear in the Chrome OS launcher
 - Alacritty: OSC52 clipboard (`osc52 = "CopyPaste"`)
-- Electron (Antigravity): use Crostini wrapper — X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
+- Electron / CEF (Antigravity, Spotify): Crostini wrapper — X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
+- Spotify also forces `--audio-api=pulseaudio` so it uses the guest PipeWire-Pulse socket
 - Island on seed Flex host: no extra GPU flags required
+
+## Hardware inventory
+
+- Guest: `inxi -MC` (CHG-010, no sudo). `-M` is **crosvm / ChromiumOS**. `-C` is the host CPUID (seed: i7-8665U).
+- Host model, SSD, battery, WLAN: Chrome OS About / `chrome://system` / crosh. Not apt. Do not install `lshw` expecting a Latitude dump.
 
 ## Shared files
 
@@ -49,5 +55,6 @@ Chrome OS **My files** is not in the VM until:
 | Own in the VM | Do not own |
 |---------------|------------|
 | Shell, terminal, apt apps | Host window manager / Hyprland |
-| User config under `$HOME` | Host audio policy |
+| User config under `$HOME` | Host audio policy (speakers, Bluetooth) |
+| Guest Pulse / pipewire-pulse clients | Replacing Crostini’s audio bridge |
 | Crostini disk contents | Chrome OS system partitions |

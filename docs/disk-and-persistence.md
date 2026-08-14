@@ -16,6 +16,7 @@ Seed host (`penguin`, Latitude 7200 · Flex) resized **10 GiB → 213 GiB** 
 | + Island | + ~0.8 GiB |
 | + Antigravity | + ~0.9 GiB |
 | + WasIstLos (WebKit) | multi-hundred MiB deps |
+| + Spotify | package ~170 MiB download; cache grows under `~/.cache/spotify` |
 | Projects + toolchains | plan 20 GiB+ |
 
 ## Ephemeral vs permanent

@@ -37,10 +37,22 @@ else
   soft "alacritty.toml missing under ~/.config/alacritty"
 fi
 
+if [[ -x "${HOME}/.local/bin/alacritty-crostini-banner" ]]; then
+  ok "alacritty-crostini-banner present"
+else
+  soft "alacritty banner script missing (CHG-011)"
+fi
+
 if command -v fastfetch >/dev/null 2>&1; then
   ok "fastfetch present"
 else
   soft "fastfetch missing"
+fi
+
+if command -v inxi >/dev/null 2>&1; then
+  ok "inxi: $(inxi --version 2>/dev/null | head -1 || echo present)"
+else
+  soft "inxi missing (CHG-010: apt install --no-install-recommends inxi dmidecode; then: inxi -MC)"
 fi
 
 if command -v git >/dev/null 2>&1; then
@@ -107,6 +119,26 @@ if command -v island-browser >/dev/null 2>&1; then
   ok "island-browser: $(island-browser --version 2>/dev/null || echo present)"
 else
   soft "island-browser missing (optional CROS-008)"
+fi
+
+if dpkg -s spotify-client >/dev/null 2>&1 && [[ -x /usr/local/bin/spotify-crostini ]]; then
+  ok "spotify: $(dpkg-query -W -f '${Version}' spotify-client 2>/dev/null || echo present) (crostini wrapper)"
+elif command -v spotify >/dev/null 2>&1; then
+  soft "spotify on PATH but wrapper missing (run ./scripts/install-spotify.sh)"
+else
+  soft "spotify-client missing (optional CHG-009)"
+fi
+
+if [[ -f /usr/share/applications/spotify.desktop ]]; then
+  ok "spotify.desktop present"
+else
+  soft "spotify.desktop missing from /usr/share/applications"
+fi
+
+if grep -q '^audio.play_bitrate_enumeration=4' "${HOME}"/.config/spotify/Users/*/prefs 2>/dev/null; then
+  ok "spotify bitrate Very High (4)"
+elif [[ -d "${HOME}/.config/spotify/Users" ]]; then
+  soft "spotify user prefs exist but Very High not pinned (re-run install-spotify.sh)"
 fi
 
 if command -v df >/dev/null 2>&1; then

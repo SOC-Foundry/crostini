@@ -9,7 +9,7 @@ New terminal: one-shot system summary, then interactive fish under `~/projects`.
 
 ## Challenge
 
-No compositor Super+Return bind. Launch from Chrome OS **Linux apps**. Landing directory is `~/projects` (not a separate data disk).
+No compositor Super+Return bind. Launch from Chrome OS **Linux apps**. Landing directory was `~/projects`. **CHG-011** moves it to `~/projects/sf` and adds inxi to the banner.
 
 ## Paths
 

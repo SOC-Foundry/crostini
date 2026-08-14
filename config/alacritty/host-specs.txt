@@ -1,0 +1,7 @@
+Machine:    Dell Latitude 7200
+Host OS:    Chrome OS Flex
+Note:       inxi does not run on the Flex host. Refresh in crosh (Ctrl+Alt+T):
+              battery_test 1
+              storage_status
+            Also: Settings → About ChromeOS → Additional details
+CPU (guest CPUID / inxi -C): Intel Core i7-8665U

@@ -2,14 +2,20 @@
 
 **A real Linux desktop inside Chrome OS.**
 
-For developers who live on Arch, Hyprland, and a carefully tuned shell — and want that same *operator* muscle memory on a Chromebook-class machine. Not a toy terminal. Not a cloud IDE. A **Debian Crostini VM** (`penguin`) running a full local stack: shell, terminal, browser, chat, agent tooling, SSH to GitHub.
+Take a retired enterprise laptop. Put **Chrome OS Flex** on it. Turn on Linux. Rebuild the muscle memory you already have, in order:
 
-> Proof point: an Arch-minded workflow can land on Crostini and stay productive with minimal host hardware — especially when the host is **Chrome OS Flex** on recycled enterprise iron.
+**shell → terminal → browser → chat → music → IDE → git**
+
+Not a toy terminal. Not a cloud IDE. A **Debian Crostini VM** (`penguin`) that you treat as the computer. The host stays thin. The VM is where you live.
+
+Scripts in this repo are shortcuts. Every chapter below has the full commands and config — you can rebuild the desktop without opening a script.
 
 ```
-Chrome OS Flex  →  Crostini (penguin)  →  fish · Alacritty · browsers · IDE · git
-     host OS            Debian VM              your desktop, user-space only
+Chrome OS Flex  →  Crostini (penguin)  →  fish · Alacritty · browser · chat · Spotify · IDE · git
+     thin host           Debian VM              operator desktop (user-space only)
 ```
+
+Chrome OS **Linux apps** is the Start menu. A `.desktop` file on disk is what puts an icon there.
 
 ---
 
@@ -31,9 +37,9 @@ Chrome OS Flex  →  Crostini (penguin)  →  fish · Alacritty · browsers · I
 
 ## 1 · Thesis
 
-Chromebooks (and Flex machines) are often dismissed as kiosk OS. That is incomplete.
+Chromebooks (and Flex machines) are often dismissed as kiosk OS. That is incomplete. **Crostini** is a real Linux container: `apt`, a systemd user session, Wayland/X via sommelier, a disk that survives reboot, and a Chrome OS launcher that surfaces Linux `.desktop` entries.
 
-Under the hood, **Crostini** gives you a real Linux container: `apt`, `systemd` user session, Wayland/X via sommelier, a persistent disk, and a Chrome OS app launcher that surfaces Linux `.desktop` entries. For someone who already ships on Arch, the mental model is:
+If you already ship on Arch, you are not learning a new OS. You are remapping the same ownership table onto Debian inside a VM:
 
 | You already do | You do here |
 |----------------|-------------|
@@ -41,13 +47,14 @@ Under the hood, **Crostini** gives you a real Linux container: `apt`, `systemd` 
 | Own the terminal | **Alacritty** |
 | Own the browser | **Island** (or any `.deb`) |
 | Own chat | **WasIstLos** (WhatsApp Web shell) |
+| Own music | **Spotify** (apt + Crostini wrapper) |
 | Own the IDE | **Antigravity** (apt + Crostini GPU flags) |
 | Own git auth | **SSH ed25519** to GitHub |
 | Own agents | Optional **Grok Build** (permanent install) |
 
-The host stays managed and light. **All serious work happens in user-space inside the VM** — `~/.config/**`, `~/.local/**`, `/usr/local/bin`, apt packages. No dual-boot, no LUKS dance on the Chrome OS disk, no pretending crosh is enough.
+Work stays in the VM: `~/.config/**`, `~/.local/**`, `/usr/local/bin`, apt. No dual-boot. No LUKS on the Chrome OS disk. Crosh is not the workstation.
 
-This repository is the **runbook and scripts** for that proof — not a distro, not a Grok marketing page.
+This repository is the **runbook** for that proof — not a distro, not a Grok marketing page. Agents (CHG-005) are optional infrastructure. The desktop is the point.
 
 ---
 
@@ -66,6 +73,8 @@ That distinction matters:
 | Linux (Crostini) | Yes (most devices) | Yes (when supported on the device) |
 | Typical use | Managed education / fleet | **Breathe life into old fleet iron** |
 
+The 7200 is already a keyboard, a screen, and enough CPU. Flex keeps Windows off the metal. You do not buy a second laptop to stay productive.
+
 ### Why Flex is a developer lever
 
 Enterprise laptops from 2018–2021 often still have:
@@ -81,7 +90,7 @@ Windows 11 and full Linux desktops on that iron can feel heavy (updates, drivers
 2. **Linux is a VM you control** — resize disk, install Debian packages, break and rebuild the container without reinstalling the host.  
 3. **Minimal hardware bar** — if the machine can run Flex and enable Linux, you can run this kit.  
 
-**Turn almost any old PC into a fully functional developer workstation** without buying a new machine and without carrying a second “real” laptop for Arch. The Latitude 7200 seed host is the existence proof: docked or undocked, Flex + Crostini + this ledger.
+The seed host is that proof, docked or undocked. The same idea works on any PC that can run Flex and enable Linux.
 
 ### Install Flex (high level)
 
@@ -113,6 +122,8 @@ cat /etc/os-release | head -3
 df -h /
 ```
 
+After the first Linux `.desktop` file lands, Chrome OS grows a **Linux apps** folder in the launcher. That folder is how you open Alacritty, Island, Spotify, Antigravity. If an icon is missing after install, the desktop file is usually on disk and garcon is stale — **Settings → Developers → Linux → Restart**.
+
 ### Files from Chrome OS → Linux
 
 Chrome OS **My files** is not mounted into penguin by default.
@@ -131,6 +142,8 @@ Btrfs on the seed host expanded live from **10 GiB → 213 GiB** without rei
 
 ## 4 · Seed hardware
 
+**Host** (Chrome OS / operator — not visible as DMI inside the VM):
+
 | | |
 |---|---|
 | Machine | Dell Latitude 7200 |
@@ -139,11 +152,38 @@ Btrfs on the seed host expanded live from **10 GiB → 213 GiB** without rei
 | Disk (final) | `/dev/vdb` · **213 GiB** btrfs |
 | Kernel | Chrome OS guest kernel (`*-cros*`) |
 
-Enough for shell + Alacritty + Island + Antigravity + agents. Resize early if you plan Electron apps.
+**Guest** (`inxi -MCzm`, CHG-010):
+
+| | |
+|---|---|
+| Machine (`-M`) | System **ChromiumOS** · product **crosvm** · BIOS crosvm |
+| CPU (`-C`) | **Intel Core i7-8665U** · 8× 1-core SMP (virtual topology) |
+| RAM (`-m`) | **16 GiB** est. · **14.07 GiB** available to penguin |
+
+**Spec commands**
+
+```bash
+# VM (penguin) — machine + CPU + RAM
+inxi -MCzm
+```
+
+```text
+# Host (Chrome OS) — crosh, Ctrl+Alt+T. There is no inxi on Flex.
+battery_test 1
+storage_status
+```
+
+Also: **Settings → About ChromeOS → Additional details**, or `chrome://system`. Do not install `lshw` expecting a Latitude dump.
+
+Enough for shell + Alacritty + Island + Spotify + Antigravity + agents. Resize early if you plan Electron / CEF apps.
 
 ---
 
 ## 5 · Quickstart
+
+Clone the kit inside penguin, bootstrap the shell and terminal, then add the apps you actually want. Fish first, then Alacritty (lands in `~/projects/sf`), then optional browser / music / IDE / agent.
+
+### Script path
 
 ```bash
 # inside penguin Terminal (or Alacritty after CHG-002)
@@ -156,7 +196,7 @@ git clone git@github.com:SOC-Foundry/crostini.git ~/projects/sf/crostini
 
 cd ~/projects/sf/crostini
 chmod +x scripts/*
-./scripts/bootstrap.sh          # fish · Tide · Alacritty · fonts
+./scripts/bootstrap.sh          # fish · Tide · Alacritty · inxi · land ~/projects/sf
 ./scripts/install-grok.sh       # optional agent CLI — skip if you do not want it
 ./scripts/verify.sh
 ```
@@ -166,15 +206,29 @@ Optional:
 ```bash
 ./scripts/install-island.sh /path/to/island-browser-stable_*.deb
 ./scripts/install-antigravity.sh
+./scripts/install-spotify.sh
 ```
 
-Then open **Alacritty**, **Island**, **Antigravity**, or **WasIstLos** from the Chrome OS Linux apps launcher.
+### What those scripts do
+
+| Script | Lands |
+|--------|--------|
+| `bootstrap.sh` | apt (incl. `inxi`), fisher + Tide + done, `chsh` to fish, Alacritty banner + `~/projects/sf`, bash→fish handoff |
+| `install-island.sh` | local Island `.deb` via apt |
+| `install-spotify.sh` | Spotify apt repo + wrapper + `.desktop` |
+| `install-antigravity.sh` | Antigravity apt repo + CLI + wrapper |
+| `install-grok.sh` | Grok binary (curl once) + PATH hooks |
+| `verify.sh` | one-shot checks (optional apps warn, do not fail) |
+
+Then open **Alacritty**, **Island**, **Spotify**, **Antigravity**, or **WasIstLos** from the Chrome OS **Linux apps** folder.
+
+Manual commands for every step are in [§6](#6--chapters-chg-ledger). You do not need the scripts.
 
 ---
 
 ## 6 · Chapters (CHG ledger)
 
-Chapters are numbered **from 1** in **apply order** on the seed host (`penguin`). Each chapter is user-space only.
+Chapters are numbered in **apply order** on the seed host. First the machine is typeable (001–002). Then Linux apps: browser, chat, music (003, 004, 009). The editor uses the same Crostini GPU wrapper as Spotify (006). Disk is why those stacks fit (007). Git is how this repo got here (008). Agents are optional (005). Hardware is guest `inxi` plus host crosh (010); the Alacritty banner prints both and lands in `~/projects/sf` (011).
 
 | CHG | Title | Applied | Risk |
 |-----|--------|---------|------|
@@ -186,8 +240,11 @@ Chapters are numbered **from 1** in **apply order** on the seed host (`penguin`)
 | [006](#chg-006--antigravity-ide--cli) | Antigravity IDE + CLI | 2026-08-12 | Low–Med |
 | [007](#chg-007--disk-resize) | Disk resize 10 → 213 GiB | 2026-08-12 | Low |
 | [008](#chg-008--git-ssh-on-fish) | Git SSH on fish | 2026-08-13 | Low |
+| [009](#chg-009--spotify-desktop) | Spotify desktop | 2026-08-14 | Low–Med |
+| [010](#chg-010--inxi-hardware-probe) | inxi hardware probe | 2026-08-14 | Low |
+| [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner + `~/projects/sf` | 2026-08-14 | Low |
 
-Detail write-ups live under [`docs/`](docs/). Scripts under [`scripts/`](scripts/).
+Longer write-ups: [`docs/chg00N-*.md`](docs/). Scripts: [`scripts/`](scripts/).
 
 ---
 
@@ -195,26 +252,73 @@ Detail write-ups live under [`docs/`](docs/). Scripts under [`scripts/`](scripts
 
 > Applied · 2026-08-12 · Low
 
-**Objective.** Login shell is **fish** with **Tide** (Rainbow) and **done**; bash remains available for agents.
+**Why this step.** You cannot think in bash snippets on this machine — login shell has to be the one you already type.
 
-**Challenge.** Crostini is Debian (`apt`), not Arch. Plain `chsh` often fails PAM — use `sudo chsh`. Tide “many icons” needs powerline-capable fonts. Interactive bash entry points still appear; hand off to fish unless escaped.
+**Surfaces.** `~/.config/fish/` · login shell · `~/.bashrc` · fisher plugins · packages `fish`, `fonts-powerline`, `fonts-noto-color-emoji`.
 
-**Surfaces.** `~/.config/fish/` · login shell · `~/.bashrc` handoff · fisher plugins.
+**Script.** `./scripts/bootstrap.sh` (also CHG-002, 010 packages, 011 banner).
 
-**Execute (summary).**
+**Manual.**
 
 ```bash
-sudo apt-get install -y fish fonts-powerline fonts-noto-color-emoji
-# fisher + tide + done (see scripts/bootstrap.sh)
+sudo apt-get update -y
+sudo apt-get install -y \
+  fish alacritty fastfetch git iproute2 util-linux \
+  fonts-powerline fonts-noto-color-emoji fonts-dejavu-core \
+  curl ca-certificates
+
+# Fisher + Tide + done
+fish -c 'curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher'
+fish -c 'fisher install ilancosman/tide franciscolourenco/done'
+fish -c 'tide configure --auto \
+  --style=Rainbow \
+  --prompt_colors="16 colors" \
+  --show_time="24-hour format" \
+  --rainbow_prompt_separators=Angled \
+  --powerline_prompt_heads=Slanted \
+  --powerline_prompt_tails=Sharp \
+  --powerline_prompt_style="Two lines, character and frame" \
+  --prompt_connection=Dotted \
+  --powerline_right_prompt_frame=Yes \
+  --prompt_spacing=Compact \
+  --icons="Many icons" \
+  --transient=Yes'
+fish -c 'set -U tide_pwd_color_anchors black; set -U tide_pwd_color_dirs black; set -U tide_pwd_color_truncated_dirs black'
+
 sudo chsh -s /usr/bin/fish "$USER"
-# Tide: Rainbow, 16 colors, 24h, compact, many icons, transient
-# Tide pwd: black on blue (readable)
-# bash: exec fish on interactive TTY unless CROSTINI_BASH=1
+
+mkdir -p ~/.config/fish/conf.d
+install -m 644 config/fish/conf.d/crostini.fish ~/.config/fish/conf.d/crostini.fish
+# optional if you want the agent later:
+# install -m 644 config/fish/conf.d/grok.fish ~/.config/fish/conf.d/grok.fish
 ```
 
-**Verify.** `getent passwd $USER | cut -d: -f7` → `/usr/bin/fish` · `fisher list` includes tide + done.
+**Config** — append to `~/.bashrc` so interactive bash hands off (stay in bash with `CROSTINI_BASH=1 bash`):
 
-**Backout.** Restore fish config backup · `sudo chsh -s /bin/bash "$USER"`.
+```bash
+# crostini-grok: fish handoff
+if [[ $- == *i* ]] && [[ -z "${CROSTINI_BASH:-}" ]] && [[ -z "${OMARCHY_BASH_NO_FISH:-}" ]]; then
+  if [[ -x /usr/bin/fish ]] && [[ -z "${BASH_EXECUTION_STRING:-}" ]]; then
+    exec /usr/bin/fish -l
+  fi
+fi
+```
+
+Backup live fish config first: `cp -a ~/.config/fish ~/.config/fish.bak.chg001.$(date +%Y%m%d-%H%M%S)`.
+
+**Verify.**
+
+```bash
+getent passwd "$USER" | cut -d: -f7   # /usr/bin/fish
+fish -c 'fisher list'                 # fisher · tide · done
+```
+
+**Backout.**
+
+```bash
+sudo chsh -s /bin/bash "$USER"
+# restore ~/.config/fish.bak.chg001.* if you took one
+```
 
 ---
 
@@ -222,22 +326,42 @@ sudo chsh -s /usr/bin/fish "$USER"
 
 > Applied · 2026-08-12 · Low
 
-**Objective.** Linux terminal launches with a one-shot system snapshot, then interactive fish in `~/projects`.
+**Why this step.** Chrome OS has no Super+Return. The Linux terminal dumps a one-shot snapshot, then fish. **CHG-011** is the current banner and landing path (`~/projects/sf`).
 
-**Challenge.** No Hyprland Super+Return. Landing path is `~/projects`, not a separate data volume.
+**Surfaces.** `~/.config/alacritty/alacritty.toml` · packages `alacritty`, `fastfetch`.
 
-**Surfaces.** `~/.config/alacritty/alacritty.toml` · package `alacritty` · `fastfetch`.
+**Script.** `./scripts/bootstrap.sh`.
 
-**Execute (summary).**
+**Manual.**
 
 ```bash
 sudo apt-get install -y alacritty fastfetch
-# shell: fish -l -c 'uname -a && ip -4 -br addr && lsblk -f && fastfetch; cd ~/projects; exec fish -l'
+mkdir -p ~/.config/alacritty ~/.local/bin ~/projects/sf
+install -m 755 config/bin/alacritty-crostini-banner ~/.local/bin/alacritty-crostini-banner
+sed "s|__HOME__|${HOME}|g" config/alacritty/alacritty.toml \
+  > ~/.config/alacritty/alacritty.toml
 ```
 
-**Verify.** Open **Alacritty** from the Chrome OS launcher · banner then Tide prompt.
+**Config** — current startup (full file: `config/alacritty/alacritty.toml`):
 
-**Backout.** Remove or restore `alacritty.toml`.
+```toml
+[terminal]
+osc52 = "CopyPaste"
+
+[terminal.shell]
+program = "__HOME__/.local/bin/alacritty-crostini-banner"
+```
+
+The banner script prints `uname` · `ip` · `lsblk -f` · VM `inxi -MCzm` · host specs · `fastfetch`, then `cd ~/projects/sf` and `exec fish -l`.
+
+**Verify.** Open **Alacritty** from Linux apps. Banner, then Tide prompt in `~/projects/sf`.
+
+```bash
+alacritty --version
+ls /usr/share/applications/Alacritty.desktop
+```
+
+**Backout.** Restore or remove `~/.config/alacritty/alacritty.toml`. Optional: `sudo apt-get remove --purge -y alacritty`.
 
 ---
 
@@ -245,23 +369,39 @@ sudo apt-get install -y alacritty fastfetch
 
 > Applied · 2026-08-12 · Low–Med
 
-**Objective.** Full enterprise Chromium (**Island**) inside the VM for sites and SSO that need a real browser.
+**Why this step.** Some SSO and work sites need a real Chromium inside the VM, not the Chrome OS browser.
 
-**Challenge.** Vendor `.deb` lives in Chrome OS Downloads until shared/copied into Linux. Install ~600 MiB; needs disk headroom.
+**Surfaces.** staged `island-browser-stable_*_amd64.deb` · package `island-browser-stable` · `/usr/bin/island-browser`.
 
-**Surfaces.** `island-browser-stable` · `/usr/bin/island-browser` · Linux apps launcher.
+**Script.** `./scripts/install-island.sh /path/to/island-browser-stable_*_amd64.deb`
 
-**Execute (summary).**
+**Manual.**
 
 ```bash
-# stage deb into Linux files, then:
-./scripts/install-island.sh /path/to/island-browser-stable_*_amd64.deb
+# drag the vendor .deb into Linux files, or Share Downloads with Linux
+sudo apt-get update -y
+sudo apt-get install -y /path/to/island-browser-stable_*_amd64.deb
+# if depends fail:
+sudo apt-get install -f -y
+sudo apt-get install -y /path/to/island-browser-stable_*_amd64.deb
 island-browser &
 ```
 
-Seed version: **151.1.97.29**. No special GPU flags required on the seed host.
+Do not commit the `.deb`. Safe to delete after install (~200 MiB staged). Seed: **151.1.97.29**. No extra GPU flags on the seed Flex host.
 
-**Backout.** `sudo apt-get remove --purge -y island-browser-stable`.
+**Verify.**
+
+```bash
+island-browser --version
+# launcher: Island
+```
+
+**Backout.**
+
+```bash
+sudo apt-get remove --purge -y island-browser-stable
+sudo apt-get autoremove -y
+```
 
 ---
 
@@ -269,21 +409,31 @@ Seed version: **151.1.97.29**. No special GPU flags required on the seed host.
 
 > Applied · 2026-08-12 · Low
 
-**Objective.** Desktop WhatsApp via Debian’s **WasIstLos** (unofficial WhatsApp Web shell).
+**Why this step.** Chat is part of the desktop. Debian ships an unofficial WhatsApp Web shell; there is no official Meta Linux client.
 
-**Challenge.** No official Meta Linux client. WebKit stack pulls a large dependency tree.
+**Surfaces.** package `wasistlos` · binary `wasistlos` · desktop **WasIstLos**.
 
-**Surfaces.** package `wasistlos` · desktop **WasIstLos** · binary `wasistlos`.
+**Script.** none — apt only.
 
-**Execute.**
+**Manual.**
 
 ```bash
+sudo apt-get update -y
 sudo apt-get install -y wasistlos
 wasistlos &
-# phone: Linked devices → scan QR
+# phone: WhatsApp → Linked devices → Link a device → scan QR
 ```
 
-**Backout.** `sudo apt-get remove --purge -y wasistlos`.
+Seed: **wasistlos 1.7.0-2**. Prefer after disk headroom (CHG-007).
+
+**Verify.** Launcher shows **WasIstLos**; QR link succeeds with phone online.
+
+**Backout.**
+
+```bash
+sudo apt-get remove --purge -y wasistlos
+sudo apt-get autoremove -y
+```
 
 ---
 
@@ -291,24 +441,62 @@ wasistlos &
 
 > Applied · 2026-08-12 · Low
 
-**Objective.** Optional coding agent CLI (**Grok Build**) installed on the **persistent** Crostini disk so reboot does not require re-curl.
+**Why this step.** Optional. Agents are infrastructure, not the thesis. If you want Grok Build, it must survive reboot without re-curl.
 
-**Challenge.** Felt “ephemeral” because PATH was incomplete after `chsh` to fish and because reinstall was habitual. Binary already lived under `~/.grok` on `/dev/vdb`.
+**Surfaces.** `~/.grok/` · `/usr/local/bin/grok` · `/etc/profile.d/grok.sh` · `~/.config/fish/conf.d/grok.fish` · `ensure-grok`.
 
-**Surfaces.** `~/.grok/` · `/usr/local/bin/grok` · `/etc/profile.d/grok.sh` · fish `conf.d` · `ensure-grok` · desktop launcher.
+**Script.** `./scripts/install-grok.sh` then `ensure-grok`.
 
-**Execute.**
+**Manual.**
 
 ```bash
-./scripts/install-grok.sh    # curls only if missing
-ensure-grok
+# official installer only if ~/.grok/bin/grok is missing
+curl -fsSL https://x.ai/cli/install.sh | bash
+
+sudo ln -sfn "$HOME/.grok/bin/grok" /usr/local/bin/grok
+sudo tee /etc/profile.d/grok.sh >/dev/null << 'EOF'
+if [ -d "$HOME/.grok/bin" ]; then
+  case ":$PATH:" in
+    *":$HOME/.grok/bin:"*) ;;
+    *) PATH="$HOME/.grok/bin:$PATH" ;;
+  esac
+  export PATH
+fi
+EOF
+sudo chmod 644 /etc/profile.d/grok.sh
+
+mkdir -p ~/.config/fish/conf.d
+install -m 644 config/fish/conf.d/grok.fish ~/.config/fish/conf.d/grok.fish
+install -m 755 scripts/ensure-grok ~/.local/bin/ensure-grok
+sudo install -m 644 config/desktop/grok-build.desktop /usr/share/applications/grok-build.desktop
+
 grok --version
-# updates: grok update
+# later: grok update
 ```
 
-This chapter is **optional infrastructure**, not the thesis of the repo.
+**Config** — `config/fish/conf.d/grok.fish`:
 
-**Backout.** Remove symlinks, profile snippets, and optionally `~/.grok`.
+```fish
+if test -d "$HOME/.grok/bin"
+    fish_add_path -g "$HOME/.grok/bin"
+end
+```
+
+**Verify.**
+
+```bash
+command -v grok
+env -i PATH=/usr/local/bin:/usr/bin:/bin HOME="$HOME" grok --version
+```
+
+**Backout.**
+
+```bash
+sudo rm -f /usr/local/bin/grok /usr/local/bin/agent
+sudo rm -f /etc/profile.d/grok.sh /usr/share/applications/grok-build.desktop
+rm -f ~/.config/fish/conf.d/grok.fish ~/.local/bin/ensure-grok
+# optional: rm -rf ~/.grok
+```
 
 ---
 
@@ -316,24 +504,60 @@ This chapter is **optional infrastructure**, not the thesis of the repo.
 
 > Applied · 2026-08-12 · Low–Med
 
-**Objective.** Google **Antigravity** IDE (apt, updatable) + **CLI** (`agy`), with a **Crostini-safe launcher** so the window is visible.
-
-**Challenge.** Official Linux apt package is the IDE line (`antigravity`). Electron on Crostini often dies on Wayland/DRM (`drmGetDevices2`) → blank UI. Fix: X11 + disable GPU + no-sandbox wrapper.
+**Why this step.** The editor has to be a window you can see. Electron on Crostini dies on Wayland/DRM without a wrapper.
 
 **Surfaces.** apt `antigravity` · `/usr/share/antigravity/` · `agy` · `/usr/local/bin/antigravity-crostini` · desktop entry.
 
-**Execute.**
+**Script.** `./scripts/install-antigravity.sh`
+
+**Manual.**
 
 ```bash
-./scripts/install-antigravity.sh
+# CLI
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+sudo ln -sfn "$HOME/.local/bin/agy" /usr/local/bin/agy
+install -m 644 config/fish/conf.d/antigravity.fish ~/.config/fish/conf.d/antigravity.fish
+
+# IDE apt repo
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
+  sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main' | \
+  sudo tee /etc/apt/sources.list.d/antigravity.list
+sudo apt-get update -y
+sudo apt-get install -y antigravity
+
+sudo install -m 755 config/bin/antigravity-crostini /usr/local/bin/antigravity-crostini
+sudo ln -sfn /usr/local/bin/antigravity-crostini /usr/local/bin/antigravity
+sudo install -m 644 config/desktop/antigravity.desktop /usr/share/applications/antigravity.desktop
+
+mkdir -p ~/.config/Antigravity
+printf '%s\n' '{' '  "disable-hardware-acceleration": true' '}' \
+  > ~/.config/Antigravity/argv.json
+
 agy --version
-antigravity &    # wrapper applies Crostini flags
+antigravity &
 ```
 
-Seed versions: IDE package **1.23.2** (app **1.107.0**) · CLI **1.1.12**.  
-Update in-app or `sudo apt-get install -y antigravity`.
+**Config** — wrapper `config/bin/antigravity-crostini` execs `/usr/share/antigravity/bin/antigravity` with `--ozone-platform=x11 --disable-gpu --disable-gpu-compositing --disable-dev-shm-usage --no-sandbox`. Desktop `Exec=/usr/local/bin/antigravity-crostini %F`.
 
-**Backout.** Purge apt package · remove `agy` · remove wrapper symlink.
+Seed: package **1.23.2** / app **1.107.0** · CLI **1.1.12**. Updates: in-app or `sudo apt-get install -y antigravity`.
+
+**Verify.**
+
+```bash
+dpkg -l antigravity
+command -v antigravity agy
+# window appears under Chrome OS (not blank)
+```
+
+**Backout.**
+
+```bash
+sudo apt-get remove --purge -y antigravity
+sudo rm -f /usr/local/bin/antigravity /usr/local/bin/antigravity-crostini /usr/local/bin/agy
+rm -f ~/.local/bin/agy ~/.config/fish/conf.d/antigravity.fish
+```
 
 ---
 
@@ -341,18 +565,26 @@ Update in-app or `sudo apt-get install -y antigravity`.
 
 > Applied · 2026-08-12 · Low
 
-**Objective.** Grow Crostini root from default **~10 GiB** to **213 GiB** so browsers and IDEs fit.
+**Why this step.** Stock ~10 GiB fills after WebKit + Electron + Spotify. This is why the later chapters fit.
 
-**Challenge.** Stock disk fills after WebKit + Electron. Resize is a Chrome OS setting, not an in-VM partition script.
+**Surfaces.** Chrome OS Settings → Linux → **Disk size**. Guest: `/dev/vdb` (btrfs on seed).
 
-**Execute.** Settings → Linux → **Disk size** → apply. Confirm:
+**Script.** none — host control plane.
+
+**Manual.**
+
+1. **Settings → Developers → Linux development environment → Disk size**.  
+2. Set target (seed: **213 GiB**).  
+3. Apply; wait.  
+4. Confirm:
 
 ```bash
 df -h /
-# expect ~213G on seed host
+lsblk -f
+# seed: ~213G on /dev/vdb
 ```
 
-**Backout.** n/a (host control plane). Shrinking is rarely worth it.
+**Backout.** n/a. Shrinking is rarely worth it.
 
 ---
 
@@ -360,31 +592,265 @@ df -h /
 
 > Applied · 2026-08-13 · Low
 
-**Objective.** ed25519 key for GitHub; fish-correct `ssh-agent`; clone this kit over SSH.
-
-**Challenge.** Bash snippets fail in fish:
-
-```fish
-# wrong
-eval "$(ssh-agent -s)"
-# right
-eval (ssh-agent -c)
-```
+**Why this step.** Clone this kit over SSH. Bash `eval "$(ssh-agent -s)"` is a syntax error in fish.
 
 **Surfaces.** `~/.ssh/id_ed25519` · `known_hosts` · GitHub SSH keys.
 
-**Execute.**
+**Script.** none.
+
+**Manual.**
 
 ```fish
 ssh-keygen -t ed25519 -C "you@example.com"
 eval (ssh-agent -c)
 ssh-add ~/.ssh/id_ed25519
-# add ~/.ssh/id_ed25519.pub to GitHub → Settings → SSH keys
+cat ~/.ssh/id_ed25519.pub
+# paste into GitHub → Settings → SSH keys
 ssh -T git@github.com
 git clone git@github.com:SOC-Foundry/crostini.git ~/projects/sf/crostini
 ```
 
-**Backout.** Remove key from GitHub · delete `~/.ssh/id_ed25519*`.
+**Verify.**
+
+```fish
+ssh-add -l
+ssh -T git@github.com
+git -C ~/projects/sf/crostini remote -v
+```
+
+**Backout.**
+
+```fish
+ssh-add -d ~/.ssh/id_ed25519 2>/dev/null
+rm -f ~/.ssh/id_ed25519 ~/.ssh/id_ed25519.pub
+# remove the key from GitHub
+```
+
+Never commit the private key.
+
+---
+
+### CHG-009 — Spotify desktop
+
+> Applied · 2026-08-14 · Low–Med
+
+**Why this step.** Music is part of the desktop. Official Linux client, same CEF trap as Antigravity, same Pulse socket Crostini already provides.
+
+**Surfaces.** apt `spotify-client` · `/usr/bin/spotify` · `/usr/local/bin/spotify-crostini` · `/usr/share/applications/spotify.desktop` · `~/.local/share/applications/spotify.desktop` · `~/.config/spotify/Users/*/prefs`.
+
+**Script.** `./scripts/install-spotify.sh`
+
+**Manual.**
+
+```bash
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.spotify.com/debian/pubkey_5384CE82BA52C83A.asc \
+  | sudo gpg --dearmor --yes -o /etc/apt/keyrings/spotify.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/spotify.gpg] https://repository.spotify.com stable non-free' \
+  | sudo tee /etc/apt/sources.list.d/spotify.list
+sudo apt-get update
+sudo apt-get install -y spotify-client
+
+sudo install -m 755 config/bin/spotify-crostini /usr/local/bin/spotify-crostini
+sudo ln -sfn /usr/local/bin/spotify-crostini /usr/local/bin/spotify
+
+mkdir -p ~/.local/share/applications
+sudo cp -a /usr/share/applications/spotify.desktop \
+  /usr/share/applications/spotify.desktop.bak.chg009.$(date +%Y%m%d-%H%M%S) 2>/dev/null || true
+sudo install -m 644 config/desktop/spotify.desktop /usr/share/applications/spotify.desktop
+install -m 644 config/desktop/spotify.desktop ~/.local/share/applications/spotify.desktop
+update-desktop-database ~/.local/share/applications 2>/dev/null || true
+
+spotify &
+```
+
+**Config** — wrapper (`config/bin/spotify-crostini`):
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+BIN="/usr/bin/spotify"
+[ -x "$BIN" ] || { echo "missing $BIN" >&2; exit 1; }
+export ELECTRON_OZONE_PLATFORM_HINT="${ELECTRON_OZONE_PLATFORM_HINT:-x11}"
+unset WAYLAND_DISPLAY 2>/dev/null || true
+exec "$BIN" \
+  --ozone-platform=x11 \
+  --disable-gpu \
+  --disable-gpu-compositing \
+  --disable-dev-shm-usage \
+  --no-sandbox \
+  --audio-api=pulseaudio \
+  "$@"
+```
+
+Desktop (`config/desktop/spotify.desktop`):
+
+```ini
+[Desktop Entry]
+Name=Spotify
+Comment=Spotify desktop (Crostini wrapper)
+Exec=/usr/local/bin/spotify-crostini %U
+TryExec=/usr/local/bin/spotify-crostini
+Icon=spotify-client
+Type=Application
+Terminal=false
+StartupNotify=true
+StartupWMClass=spotify
+Categories=Audio;Music;Player;AudioVideo;
+MimeType=x-scheme-handler/spotify;
+```
+
+Very High (~320 kbit/s, enumeration `4`) after first sign-in — installer merges these into `~/.config/spotify/Users/*/prefs` (or GUI: **Settings → Audio Quality → Very high**). Premium required. Do not commit that prefs file (autologin blobs).
+
+```
+audio.play_bitrate_non_metered_migrated=true
+audio.sync_bitrate_enumeration=4
+audio.play_bitrate_enumeration=4
+audio.play_bitrate_non_metered_enumeration=4
+```
+
+Seed: **spotify-client 1:1.2.95.453.g0eeebbed**. Do not replace PipeWire/Pulse. Host volume is Chrome OS.
+
+**Verify.**
+
+```bash
+test -x /usr/bin/spotify
+test -x /usr/local/bin/spotify-crostini
+test -f /usr/share/applications/spotify.desktop
+test -f ~/.local/share/applications/spotify.desktop
+grep -q spotify-crostini /usr/share/applications/spotify.desktop
+dpkg-query -W spotify-client
+pactl get-default-sink
+grep -E '^audio\.(play|sync)_bitrate' ~/.config/spotify/Users/*/prefs
+pgrep -a spotify
+```
+
+Launcher: **Linux apps → Spotify**. If the files exist but the folder is empty: **Settings → Developers → Linux → Restart**. Sign in in the GUI; play one track.
+
+**Backout.**
+
+```bash
+sudo apt-get remove --purge -y spotify-client
+sudo rm -f /etc/apt/sources.list.d/spotify.list /etc/apt/keyrings/spotify.gpg
+sudo rm -f /usr/local/bin/spotify /usr/local/bin/spotify-crostini
+sudo rm -f /usr/share/applications/spotify.desktop
+rm -f ~/.local/share/applications/spotify.desktop
+sudo apt-get update
+rm -rf ~/.config/spotify ~/.cache/spotify
+```
+
+---
+
+### CHG-010 — inxi hardware probe
+
+> Applied · 2026-08-14 · Low
+
+**Why this step.** You need a one-liner for machine + CPU + RAM in the VM. Crostini is a guest: `-M` is crosvm, `-C` is the real CPU. The Latitude / SSD / battery live on the Chrome OS host — there is no `inxi` there.
+
+**Surfaces.** packages `inxi`, `dmidecode` · `/usr/bin/inxi` · crosh on the host.
+
+**Script.** none — also added to `scripts/bootstrap.sh`.
+
+**Manual.**
+
+```bash
+sudo apt-get update
+sudo apt-get install -y --no-install-recommends inxi dmidecode
+```
+
+`--no-install-recommends` skips `mesa-utils` / `lm-sensors` (unused by `-MC`).
+
+Two spec commands after install:
+
+```bash
+# VM — penguin
+inxi -MCzm
+```
+
+```text
+# Host — crosh (Ctrl+Alt+T). Not inxi.
+battery_test 1
+storage_status
+```
+
+`inxi -MC` is enough if you do not need RAM. `sudo inxi -MC` only adds DMI serial. Daily use does not need sudo. Host extras: **About ChromeOS → Additional details**, `chrome://system`.
+
+**Config.** none.
+
+**Verify.**
+
+```bash
+command -v inxi
+dpkg-query -W inxi dmidecode
+inxi -c 0 -MCzm
+```
+
+Seed (2026-08-14, **inxi 3.3.38-1-1**):
+
+```text
+Machine:
+  Type: N/A System: ChromiumOS product: crosvm v: N/A serial: N/A
+  Mobo: N/A model: N/A serial: N/A BIOS: crosvm v: N/A date: N/A
+Memory:
+  System RAM: total: 16 GiB note: est. available: 14.07 GiB
+CPU:
+  Info: 8x 1-core model: Intel Core i7-8665U bits: 64 type: SMP cache: L2: 8x 256 KiB (2 MiB)
+  Speed (MHz): avg: 2112 min/max: N/A cores: 1: 2112 … 8: 2112
+```
+
+`-M` = crosvm is correct. Do not install `lshw` expecting a Latitude dump.
+
+**Backout.**
+
+```bash
+sudo apt-get remove --purge -y inxi
+# leave dmidecode
+```
+
+---
+
+### CHG-011 — Alacritty banner + ~/projects/sf
+
+> Applied · 2026-08-14 · Low
+
+**Why this step.** The banner should show **VM** and **host** specs together, then land where this kit actually lives. There is no `/projects` on Crostini — the path is **`~/projects/sf`**.
+
+**Surfaces.** `~/.local/bin/alacritty-crostini-banner` · `~/.config/crostini/host-specs.txt` · `~/.config/alacritty/alacritty.toml`
+
+**Script.** `./scripts/bootstrap.sh`
+
+**Manual.**
+
+```bash
+mkdir -p ~/.local/bin ~/.config/crostini ~/projects/sf
+install -m 755 config/bin/alacritty-crostini-banner ~/.local/bin/alacritty-crostini-banner
+install -m 644 config/alacritty/host-specs.txt ~/.config/crostini/host-specs.txt
+# alacritty [terminal.shell] program = $HOME/.local/bin/alacritty-crostini-banner
+```
+
+Banner still runs `uname`, `ip -4 -br addr`, `lsblk -f`, `fastfetch`, then:
+
+```text
+=== VM (penguin) ===
+inxi -c 0 -MCzm
+
+=== HOST (Chrome OS Flex) ===
+# from ~/.config/crostini/host-specs.txt  (Latitude 7200 · crosh hints)
+# Flex has no inxi; refresh: crosh battery_test 1 · storage_status
+```
+
+Then `cd ~/projects/sf` and `exec fish -l`.
+
+**Config.** `config/bin/alacritty-crostini-banner` · `config/alacritty/host-specs.txt`
+
+**Verify.** Open **Alacritty**. Prompt cwd is `~/projects/sf`. Banner has both VM inxi and HOST block.
+
+```bash
+test -x ~/.local/bin/alacritty-crostini-banner
+grep alacritty-crostini-banner ~/.config/alacritty/alacritty.toml
+```
+
+**Backout.** Restore `~/.config/alacritty/alacritty.toml.bak.chg011.*`
 
 ---
 
@@ -399,21 +865,24 @@ docs/
   troubleshooting.md
   chg-ledger.md
   handoff.md              ← seed-host continuity
-  chg001-…chg008-*.md     ← chapter detail
+  chg001-…chg011-*.md     ← chapter detail
   archive/                ← legacy session dumps (do not use as source of truth)
 scripts/
-  bootstrap.sh            ← CHG-001 · 002
+  bootstrap.sh            ← CHG-001 · 002 · 010 · 011
   install-grok.sh         ← CHG-005
   ensure-grok
   install-island.sh       ← CHG-003
   install-antigravity.sh  ← CHG-006
+  install-spotify.sh      ← CHG-009
   verify.sh
 config/
-  alacritty/
+  alacritty/              # toml + host-specs.txt
   fish/conf.d/
-  bin/antigravity-crostini
+  bin/                    # antigravity · spotify · alacritty-crostini-banner
   desktop/
+  spotify/prefs.high-quality
 ```
+
 ---
 
 ## 8 · Non-goals
@@ -424,6 +893,7 @@ config/
 | Hyprland / multi-monitor host config | Host windowing is Chrome OS |
 | LUKS data partitions on the Chrome disk | Wrong layer; use Crostini disk resize |
 | Host WirePlumber / Bluetooth policy | Owned by Chrome OS |
+| Snap / Flatpak for this kit | Extra daemons; seed has neither |
 | Shipping vendor `.deb` blobs in git | License + size — stage locally |
 | Claiming “native Chromebook only” | **Flex on ordinary PCs is first-class** |
 
@@ -443,6 +913,9 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | 2026-08-12 | [006](#chg-006--antigravity-ide--cli) | Antigravity IDE **1.107.0** (pkg 1.23.2) · CLI **1.1.12** · Crostini wrapper | Applied | Low–Med | apt · `agy` · `antigravity-crostini` |
 | 2026-08-12 | [007](#chg-007--disk-resize) | Crostini disk **10 GiB → 213 GiB** | Applied | Low | Chrome OS Settings · btrfs `/dev/vdb` |
 | 2026-08-13 | [008](#chg-008--git-ssh-on-fish) | Git SSH ed25519 · fish agent · clone this repo | Applied | Low | `~/.ssh` · GitHub · `~/projects/sf/crostini` |
+| 2026-08-14 | [009](#chg-009--spotify-desktop) | Spotify **1.2.95.453** · Crostini wrapper | Applied | Low–Med | `spotify-client` · `spotify-crostini` · Linux apps |
+| 2026-08-14 | [010](#chg-010--inxi-hardware-probe) | inxi **3.3.38** · VM `inxi -MCzm` · host crosh `battery_test` / `storage_status` | Applied | Low | `inxi` · `dmidecode` · crosh |
+| 2026-08-14 | [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner: VM+host specs · land **`~/projects/sf`** | Applied | Low | `alacritty-crostini-banner` · `host-specs.txt` |
 
 ### Software inventory (seed, post-changelog)
 
@@ -453,13 +926,17 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | `git` · `openssh-client` | SCM |
 | `island-browser` | Browser |
 | `wasistlos` | WhatsApp |
+| `spotify-client` **1.2.95.453** · `spotify-crostini` | Music |
 | `antigravity` · `agy` | IDE + agent CLI |
 | `grok` (optional) | Agent CLI |
 | `fonts-powerline` · emoji fonts | Prompt glyphs |
+| `inxi` **3.3.38** · `dmidecode` | Guest probe (`inxi -MCzm`); host specs via crosh |
+
+That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fish, opens Alacritty, and can launch Island, WhatsApp, Spotify, and Antigravity from **Linux apps**. Guest CPU via inxi is i7-8665U; chassis string is crosvm.
 
 ### Next free
 
-**CHG-009** — candidates: Nerd Font pin for Tide · Chrome OS “Share with Linux” automation · durable `ssh-agent` fish conf.d · drop optional `/opt` Antigravity tarball leftovers.
+**CHG-012** — Nerd Font pin for Tide · Share with Linux runbook · durable `ssh-agent` fish conf.d.
 
 ---
 
@@ -469,6 +946,8 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 - Shell: [fish](https://fishshell.com/) · [fisher](https://github.com/jorgebucaran/fisher) · [Tide](https://github.com/IlanCosman/tide) · [done](https://github.com/franciscolourenco/done)  
 - Terminal: [Alacritty](https://alacritty.org/)  
 - IDE: [Google Antigravity](https://antigravity.google/download/linux)  
+- Music: [Spotify for Linux](https://www.spotify.com/us/download/linux/)  
+- Hardware probe: [inxi](https://smxi.org/docs/inxi.htm) (guest); crosh on the host  
 
 ---
 
@@ -478,4 +957,4 @@ MIT. Config and scripts are free to copy. Do not commit secrets, private keys, o
 
 ---
 
-<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-13 · CHG-001…008</sub>
+<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-14 · CHG-001…011</sub>
