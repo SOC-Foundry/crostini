@@ -49,7 +49,7 @@ If you already ship on Arch, you are not learning a new OS. You are remapping th
 | Own chat | **WasIstLos** (WhatsApp Web shell) |
 | Own music | **Spotify** (apt + Crostini wrapper) |
 | Own the IDE | **Antigravity** (apt + Crostini GPU flags) |
-| Own git auth | **SSH ed25519** to GitHub |
+| Own git auth | **SSH ed25519** to personal GitHub (1Password agent, CHG-012) |
 | Own agents | Optional **Grok Build** (permanent install) |
 
 Work stays in the VM: `~/.config/**`, `~/.local/**`, `/usr/local/bin`, apt. No dual-boot. No LUKS on the Chrome OS disk. Crosh is not the workstation.
@@ -207,6 +207,7 @@ Optional:
 ./scripts/install-island.sh /path/to/island-browser-stable_*.deb
 ./scripts/install-antigravity.sh
 ./scripts/install-spotify.sh
+./scripts/install-1password.sh
 ```
 
 ### What those scripts do
@@ -216,6 +217,7 @@ Optional:
 | `bootstrap.sh` | apt (incl. `inxi`), fisher + Tide + done, `chsh` to fish, Alacritty banner + `~/projects/sf`, bash→fish handoff |
 | `install-island.sh` | local Island `.deb` via apt |
 | `install-spotify.sh` | Spotify apt repo + wrapper + `.desktop` |
+| `install-1password.sh` | 1Password apt repo + wrapper + GitHub-only SSH agent |
 | `install-antigravity.sh` | Antigravity apt repo + CLI + wrapper |
 | `install-grok.sh` | Grok binary (curl once) + PATH hooks |
 | `verify.sh` | one-shot checks (optional apps warn, do not fail) |
@@ -228,7 +230,7 @@ Manual commands for every step are in [§6](#6--chapters-chg-ledger). You do not
 
 ## 6 · Chapters (CHG ledger)
 
-Chapters are numbered in **apply order** on the seed host. First the machine is typeable (001–002). Then Linux apps: browser, chat, music (003, 004, 009). The editor uses the same Crostini GPU wrapper as Spotify (006). Disk is why those stacks fit (007). Git is how this repo got here (008). Agents are optional (005). Hardware is guest `inxi` plus host crosh (010); the Alacritty banner prints both and lands in `~/projects/sf` (011).
+Chapters are numbered in **apply order** on the seed host. First the machine is typeable (001–002). Then Linux apps: browser, chat, music (003, 004, 009). The editor uses the same Crostini GPU wrapper as Spotify (006). Disk is why those stacks fit (007). Git is how this repo got here (008). Personal GitHub private key leaves disk via 1Password SSH agent (012). Agents are optional (005). Hardware is guest `inxi` plus host crosh (010); the Alacritty banner prints both and lands in `~/projects/sf` (011).
 
 | CHG | Title | Applied | Risk |
 |-----|--------|---------|------|
@@ -243,6 +245,7 @@ Chapters are numbered in **apply order** on the seed host. First the machine is 
 | [009](#chg-009--spotify-desktop) | Spotify desktop | 2026-08-14 | Low–Med |
 | [010](#chg-010--inxi-hardware-probe) | inxi hardware probe | 2026-08-14 | Low |
 | [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner + `~/projects/sf` | 2026-08-14 | Low |
+| [012](#chg-012--1password-personal-github-ssh-agent) | 1Password · personal GitHub SSH agent | 2026-08-15 | Med |
 
 Longer write-ups: [`docs/chg00N-*.md`](docs/). Scripts: [`scripts/`](scripts/).
 
@@ -854,6 +857,36 @@ grep alacritty-crostini-banner ~/.config/alacritty/alacritty.toml
 
 ---
 
+### CHG-012 — 1Password · personal GitHub SSH agent
+
+> Applied · 2026-08-15 · Med
+
+**Why this step.** npm supply-chain work I get hired for almost always begins with a GitHub private key on a laptop disk. I have not seen that pattern survive a shop that actually enforced a vaulted SSH agent. Personal GitHub is not exempt. CHG-008 left `id_ed25519` on penguin; this chapter moves it into 1Password. First idea was an existing **Bitwarden** account + “CLI SSH agent”; `bw` cannot sign, and Bitwarden’s Linux agent is weaker (no apt channel). Applied: **1Password** desktop as the agent for **personal `github.com` only**. Island is work (Workspace / Zoom / Slack), not part of this.
+
+**Surfaces.** apt `1password` **8.12.32** · `1password-cli` **2.39.0** · `/usr/local/bin/1password-crostini` · `~/.ssh/config` (`Host github.com ssh.github.com`) · `~/.1password/agent.sock` · item `github-personal-ed25519`
+
+**Script.** `./scripts/install-1password.sh`
+
+**Human.** Settings → Developer → **Use the SSH Agent**. Import the existing key in the app (not `op` — CLI cannot import). Verify `ssh -T git@github.com`, then `shred -u ~/.ssh/id_ed25519`. Seed: shredded 2026-08-15; GitHub still `Hi kylejeromethompson!`.
+
+Do **not** set `SSH_AUTH_SOCK` globally. Do **not** use `Host *`. Do **not** install the 1Password extension in Island.
+
+Long form (Bitwarden detour, CLI limits, import, shred): [`docs/chg012-1password-ssh-agent.md`](docs/chg012-1password-ssh-agent.md).
+
+**Verify.**
+
+```bash
+dpkg-query -W 1password 1password-cli
+test -S ~/.1password/agent.sock
+ssh -G github.com | grep -i identityagent
+ssh -T git@github.com
+test ! -e ~/.ssh/id_ed25519
+```
+
+**Backout.** Restore `~/.ssh/config.bak.chg012.*`. `sudo apt-get remove --purge -y 1password 1password-cli` and remove the wrapper / desktop files.
+
+---
+
 ## 7 · Repository layout
 
 ```text
@@ -874,12 +907,14 @@ scripts/
   install-island.sh       ← CHG-003
   install-antigravity.sh  ← CHG-006
   install-spotify.sh      ← CHG-009
+  install-1password.sh    ← CHG-012
   verify.sh
 config/
   alacritty/              # toml + host-specs.txt
   fish/conf.d/
-  bin/                    # antigravity · spotify · alacritty-crostini-banner
+  bin/                    # antigravity · spotify · 1password · alacritty-crostini-banner
   desktop/
+  ssh/                    # GitHub-only IdentityAgent snippet
   spotify/prefs.high-quality
 ```
 
@@ -916,6 +951,7 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | 2026-08-14 | [009](#chg-009--spotify-desktop) | Spotify **1.2.95.453** · Crostini wrapper | Applied | Low–Med | `spotify-client` · `spotify-crostini` · Linux apps |
 | 2026-08-14 | [010](#chg-010--inxi-hardware-probe) | inxi **3.3.38** · VM `inxi -MCzm` · host crosh `battery_test` / `storage_status` | Applied | Low | `inxi` · `dmidecode` · crosh |
 | 2026-08-14 | [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner: VM+host specs · land **`~/projects/sf`** | Applied | Low | `alacritty-crostini-banner` · `host-specs.txt` |
+| 2026-08-15 | [012](#chg-012--1password-personal-github-ssh-agent) | 1Password desktop · personal GitHub SSH agent | Applied | Med | `1password` · `1password-crostini` · `~/.ssh/config` |
 
 ### Software inventory (seed, post-changelog)
 
@@ -931,12 +967,13 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | `grok` (optional) | Agent CLI |
 | `fonts-powerline` · emoji fonts | Prompt glyphs |
 | `inxi` **3.3.38** · `dmidecode` | Guest probe (`inxi -MCzm`); host specs via crosh |
+| `1password` **8.12.32** · `1password-cli` **2.39.0** · `1password-crostini` | Personal GitHub SSH agent (github.com only) |
 
-That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fish, opens Alacritty, and can launch Island, WhatsApp, Spotify, and Antigravity from **Linux apps**. Guest CPU via inxi is i7-8665U; chassis string is crosvm.
+That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fish, opens Alacritty, and can launch Island, WhatsApp, Spotify, Antigravity, and 1Password from **Linux apps**. Guest CPU via inxi is i7-8665U; chassis string is crosvm.
 
 ### Next free
 
-**CHG-012** — Nerd Font pin for Tide · Share with Linux runbook · durable `ssh-agent` fish conf.d.
+**CHG-013** — Nerd Font pin for Tide · Share with Linux runbook.
 
 ---
 
@@ -947,6 +984,7 @@ That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fis
 - Terminal: [Alacritty](https://alacritty.org/)  
 - IDE: [Google Antigravity](https://antigravity.google/download/linux)  
 - Music: [Spotify for Linux](https://www.spotify.com/us/download/linux/)  
+- Vault / SSH agent: [1Password for Linux](https://support.1password.com/install-linux/)  
 - Hardware probe: [inxi](https://smxi.org/docs/inxi.htm) (guest); crosh on the host  
 
 ---
@@ -957,4 +995,4 @@ MIT. Config and scripts are free to copy. Do not commit secrets, private keys, o
 
 ---
 
-<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-14 · CHG-001…011</sub>
+<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-15 · CHG-001…012</sub>

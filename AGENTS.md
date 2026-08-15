@@ -9,6 +9,25 @@ CLI agent runbook for this repository (**crostini** — functional Linux desktop
 3. User-space only: `~/.config/**`, `~/.local/**`, `/usr/local/bin`, apt, this repo. Never touch Chrome OS host partitions.
 4. Match surrounding comment style: short, factual, no narrative placeholders.
 
+## Profiles (do not mix)
+
+This Flex machine has two browser worlds. Agents must not correlate them.
+
+| Surface | Role |
+|---------|------|
+| **Personal Chrome OS / Google profile** `kylejeromethompson.com` | **All development.** Git, GitHub, this repo, Antigravity, Alacritty, agents, personal vault/SSH. |
+| **Island** | Work apps only: **Google Workspace**, **Zoom**, **Slack**. Enterprise SSO. Not a dev browser. |
+
+Do **not**:
+
+- Install personal vault / password-manager extensions in Island
+- Wire Island native messaging to a personal vault (1Password, Bitwarden, etc.)
+- Open personal GitHub, this kit, or vault sign-in inside Island
+- Treat Island as “the Linux browser” for passkeys, git, or agent work
+- Point `Host *` or a global `SSH_AUTH_SOCK` at a personal vault agent
+
+Personal git/SSH (CHG-008 / CHG-012) is for this operator’s **personal** GitHub only. Do not route work remotes through that agent.
+
 ## Git policy (mandatory)
 
 **Never** run:

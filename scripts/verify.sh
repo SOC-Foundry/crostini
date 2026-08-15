@@ -135,6 +135,38 @@ else
   soft "spotify.desktop missing from /usr/share/applications"
 fi
 
+if dpkg -s 1password >/dev/null 2>&1 && [[ -x /usr/local/bin/1password-crostini ]]; then
+  ok "1password: $(dpkg-query -W -f '${Version}' 1password 2>/dev/null || echo present) (crostini wrapper)"
+elif command -v 1password >/dev/null 2>&1; then
+  soft "1password on PATH but wrapper missing (run ./scripts/install-1password.sh)"
+else
+  soft "1password missing (optional CHG-012)"
+fi
+
+if [[ -S "${HOME}/.1password/agent.sock" ]]; then
+  ok "1password SSH agent socket present"
+else
+  soft "1password agent socket missing (launch app → Settings → Developer → Use the SSH Agent)"
+fi
+
+if ssh -G github.com 2>/dev/null | grep -qi 'identityagent ~/.1password/agent.sock\|identityagent /home/.*/.1password/agent.sock'; then
+  ok "ssh IdentityAgent for github.com is 1password"
+else
+  soft "ssh -G github.com is not using ~/.1password/agent.sock"
+fi
+
+if [[ -e "${HOME}/.ssh/id_ed25519" ]]; then
+  soft "~/.ssh/id_ed25519 still on disk — import into 1Password then shred (CHG-012)"
+else
+  ok "no ~/.ssh/id_ed25519 on disk"
+fi
+
+case "${SSH_AUTH_SOCK:-}" in
+  *1password*)
+    soft "SSH_AUTH_SOCK points at 1Password globally (${SSH_AUTH_SOCK}) — CHG-012 wants host-scoped IdentityAgent only"
+    ;;
+esac
+
 if grep -q '^audio.play_bitrate_enumeration=4' "${HOME}"/.config/spotify/Users/*/prefs 2>/dev/null; then
   ok "spotify bitrate Very High (4)"
 elif [[ -d "${HOME}/.config/spotify/Users" ]]; then

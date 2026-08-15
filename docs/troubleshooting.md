@@ -133,11 +133,24 @@ Resize Linux disk (CHG-007) before Island + Antigravity + WebKit.
 
 ## Permission denied (publickey) for GitHub
 
+CHG-012: 1Password desktop must be running, unlocked, with **Settings → Developer → Use the SSH Agent**. Socket: `~/.1password/agent.sock`.
+
 ```fish
-ssh-add -l
-eval (ssh-agent -c)
-ssh-add ~/.ssh/id_ed25519
+test -S ~/.1password/agent.sock
+ssh -G github.com | grep -i identityagent
 ssh -T git@github.com
 ```
 
-Confirm the public key is on GitHub → Settings → SSH keys.
+Authorize the prompt in 1Password. Do not `ssh-add` the disk key. Do not set `SSH_AUTH_SOCK` globally.
+
+If the private file was already deleted and the vault item is missing, recover the private field from 1Password or restore a backup you made yourself.
+
+Confirm the public key is on personal GitHub → Settings → SSH keys.
+
+## 1Password window blank / git hangs
+
+Same as other Electron apps. Use the kit wrapper (`1password-crostini`). Restart Linux if the Linux apps icon is missing.
+
+## 1Password agent answers a non-GitHub host
+
+`~/.ssh/config` must not use `Host *`. Restore `~/.ssh/config.bak.chg012.*` and re-run `./scripts/install-1password.sh`.

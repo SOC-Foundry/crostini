@@ -34,7 +34,8 @@
 - Sommelier bridges Wayland/X (`DISPLAY=:0`, often `WAYLAND_DISPLAY=wayland-0`)
 - Linux `.desktop` entries appear in the Chrome OS launcher
 - Alacritty: OSC52 clipboard (`osc52 = "CopyPaste"`)
-- Electron / CEF (Antigravity, Spotify): Crostini wrapper — X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
+- Electron / CEF (Antigravity, Spotify, 1Password): Crostini wrapper — X11 + `--disable-gpu` + `--no-sandbox` (no DRM nodes in the VM)
+- 1Password SSH agent is **Host github.com / ssh.github.com** only. Do not override global `SSH_AUTH_SOCK`.
 - Spotify also forces `--audio-api=pulseaudio` so it uses the guest PipeWire-Pulse socket
 - Island on seed Flex host: no extra GPU flags required
 

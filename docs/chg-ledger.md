@@ -15,8 +15,9 @@ Canonical IDs match the root [README](../README.md). Apply order = chapter numbe
 | CHG-009 | Spotify desktop | 2026-08-14 | Applied | Low–Med | [chg009-spotify.md](chg009-spotify.md) |
 | CHG-010 | inxi hardware probe (VM `inxi -MCzm` · host crosh) | 2026-08-14 | Applied | Low | [chg010-inxi-hardware.md](chg010-inxi-hardware.md) |
 | CHG-011 | Alacritty banner inxi + land `~/projects/sf` | 2026-08-14 | Applied | Low | [chg011-alacritty-inxi-landing.md](chg011-alacritty-inxi-landing.md) |
+| CHG-012 | 1Password · personal GitHub SSH agent | 2026-08-15 | Applied | Med | [chg012-1password-ssh-agent.md](chg012-1password-ssh-agent.md) |
 
-**Next free:** CHG-012.
+**Next free:** CHG-013.
 
 Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md](disk-and-persistence.md) · [troubleshooting.md](troubleshooting.md) · [archive/](archive/)
 
@@ -24,4 +25,4 @@ Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md]
 
 | ID | Topic |
 |----|--------|
-| 012+ | Nerd Font · Share with Linux runbook · durable ssh-agent conf.d |
+| 013+ | Nerd Font · Share with Linux runbook |
