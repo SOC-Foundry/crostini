@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "crostini 2-tab cap",
+  "version": "1.0.0",
+  "description": "At most two tabs. CHG-014 RAM cap on penguin.",
+  "permissions": ["tabs"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "incognito": "spanning"
+}

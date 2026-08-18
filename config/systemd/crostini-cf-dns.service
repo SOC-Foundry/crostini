@@ -1,0 +1,12 @@
+[Unit]
+Description=crostini CHG-013 pin penguin DNS to Cloudflare DoH stub
+After=dnscrypt-proxy.socket network.target
+Wants=dnscrypt-proxy.socket
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/cf-dns-crostini pin
+
+[Install]
+WantedBy=multi-user.target

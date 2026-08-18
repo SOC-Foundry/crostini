@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# crostini · CHG-014 — Debian Chromium, personal, 2-tab cap (not Island)
+# Exec the real binary. /usr/bin/chromium adds --enable-remote-extensions and
+# an empty --load-extension, which drops the cap.
+set -euo pipefail
+BIN="/usr/lib/chromium/chromium"
+[ -x "$BIN" ] || BIN="/usr/bin/chromium"
+[ -x "$BIN" ] || { echo "missing chromium binary" >&2; exit 1; }
+EXT="/usr/local/share/crostini/chromium-2tab"
+export ELECTRON_OZONE_PLATFORM_HINT="${ELECTRON_OZONE_PLATFORM_HINT:-x11}"
+unset WAYLAND_DISPLAY 2>/dev/null || true
+exec "$BIN" \
+  --load-extension="${EXT}" \
+  --disable-extensions-except="${EXT}" \
+  --disable-background-networking \
+  --ozone-platform=x11 \
+  --disable-gpu \
+  --disable-gpu-compositing \
+  --disable-dev-shm-usage \
+  --no-sandbox \
+  --password-store=basic \
+  --no-default-browser-check \
+  --disable-pings \
+  "$@"

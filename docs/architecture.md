@@ -38,6 +38,7 @@
 - 1Password SSH agent is **Host github.com / ssh.github.com** only. Do not override global `SSH_AUTH_SOCK`.
 - Spotify also forces `--audio-api=pulseaudio` so it uses the guest PipeWire-Pulse socket
 - Island on seed Flex host: no extra GPU flags required
+- Chromium (CHG-014): personal Linux browser, **two tabs max**. Wrapper execs `/usr/lib/chromium/chromium` (not Debian `/usr/bin/chromium`) with X11 + `--disable-gpu` + `--no-sandbox` + `--password-store=basic` + the 2-tab extension. Not Island. Not CHG-013.
 
 ## Hardware inventory
 
@@ -51,6 +52,15 @@ Chrome OS **My files** is not in the VM until:
 1. Drag into **Linux files**, or  
 2. Right-click → **Share with Linux** → paths under `/mnt/chromeos/…`
 
+## DNS
+
+- Stock penguin: `/etc/resolv.conf` → `/run/resolv.conf` · `nameserver 172.20.0.1` (maitred / Chrome OS DNS proxy). Hotel DHCP is visible here.
+- CHG-013 replaces `/etc/resolv.conf` with a **regular file** → `127.0.2.1` (`dnscrypt-proxy` DoH to Cloudflare Families malware + adult, 1.1.1.3). Do not `tee` through the symlink.
+- Official `cloudflare-warp` / `warp-svc` **cannot run**: guest kernel has no policy routing (`ip rule` / RTM_GETRULE → EOPNOTSUPP).
+- Host Chrome is a separate resolver (Chrome OS **Use secure DNS**). This chapter does not cover it.
+- Personal only. Do not enroll Cloudflare One / Teams.
+- Gateway inspection CA is optional **CHG-013**, not a browser chapter. System store + NSS. Not applied without a current PEM.
+
 ## Boundaries
 
 | Own in the VM | Do not own |
@@ -58,4 +68,5 @@ Chrome OS **My files** is not in the VM until:
 | Shell, terminal, apt apps | Host window manager / Hyprland |
 | User config under `$HOME` | Host audio policy (speakers, Bluetooth) |
 | Guest Pulse / pipewire-pulse clients | Replacing Crostini’s audio bridge |
+| Penguin DNS stub (CHG-013) | Chrome OS host DNS / WLAN / captive portal |
 | Crostini disk contents | Chrome OS system partitions |

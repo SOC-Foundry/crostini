@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# crostini-grok · CROS-009 / CHG-014 — Antigravity IDE (apt) + CLI + Crostini wrapper
+# crostini · CHG-006 — Antigravity IDE (apt) + CLI + Crostini wrapper
 set -euo pipefail
 
 export DEBIAN_FRONTEND=noninteractive

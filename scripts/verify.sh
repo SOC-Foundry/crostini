@@ -173,6 +173,69 @@ elif [[ -d "${HOME}/.config/spotify/Users" ]]; then
   soft "spotify user prefs exist but Very High not pinned (re-run install-spotify.sh)"
 fi
 
+if dpkg -s chromium >/dev/null 2>&1 && [[ -x /usr/local/bin/chromium-crostini ]]; then
+  ok "chromium: $(dpkg-query -W -f '${Version}' chromium 2>/dev/null || echo present) (crostini wrapper)"
+elif command -v chromium >/dev/null 2>&1; then
+  soft "chromium on PATH but wrapper missing (run ./scripts/install-chromium.sh)"
+else
+  soft "chromium missing (optional CHG-014)"
+fi
+
+if [[ -f /usr/share/applications/chromium.desktop ]] && grep -q chromium-crostini /usr/share/applications/chromium.desktop; then
+  ok "chromium.desktop uses crostini wrapper"
+elif [[ -f /usr/share/applications/chromium.desktop ]]; then
+  soft "chromium.desktop present but not the CHG-014 wrapper"
+fi
+
+if [[ -f /usr/local/share/crostini/chromium-2tab/manifest.json ]] && grep -q load-extension /etc/chromium.d/crostini-2tab 2>/dev/null; then
+  ok "chromium 2-tab cap extension installed"
+elif dpkg -s chromium >/dev/null 2>&1; then
+  soft "chromium 2-tab cap missing (re-run ./scripts/install-chromium.sh)"
+fi
+
+if dpkg -s dnscrypt-proxy >/dev/null 2>&1 && [[ -x /usr/local/bin/cf-dns-crostini ]]; then
+  ok "dnscrypt-proxy: $(dpkg-query -W -f '${Version}' dnscrypt-proxy 2>/dev/null || echo present) (cf-dns-crostini)"
+elif command -v dnscrypt-proxy >/dev/null 2>&1 || dpkg -s dnscrypt-proxy >/dev/null 2>&1; then
+  soft "dnscrypt-proxy installed but helper missing (run ./scripts/install-cf-dns.sh)"
+else
+  soft "dnscrypt-proxy missing (optional CHG-013)"
+fi
+
+if [[ -f /etc/resolv.conf ]] && grep -q 'nameserver 127.0.2.1' /etc/resolv.conf && [[ ! -L /etc/resolv.conf ]]; then
+  ok "resolv.conf pinned to 127.0.2.1 (Cloudflare DoH stub)"
+elif [[ -f /etc/resolv.conf ]] && grep -q 'nameserver 127.0.2.1' /etc/resolv.conf; then
+  soft "resolv.conf has 127.0.2.1 but is still a symlink — run cf-dns-crostini on"
+else
+  soft "resolv.conf is not the CHG-013 stub (hotel off, or CHG-013 not applied)"
+fi
+
+if grep -q "cloudflare-family" /etc/dnscrypt-proxy/dnscrypt-proxy.toml 2>/dev/null; then
+  ok "dnscrypt-proxy server_names include cloudflare-family"
+elif grep -q "cloudflare-security" /etc/dnscrypt-proxy/dnscrypt-proxy.toml 2>/dev/null; then
+  soft "dnscrypt-proxy still on cloudflare-security — want cloudflare-family (1.1.1.3)"
+fi
+
+if ss -lun 2>/dev/null | grep -q '127.0.2.1:53'; then
+  ok "dnscrypt-proxy listening on 127.0.2.1:53"
+elif dpkg -s dnscrypt-proxy >/dev/null 2>&1; then
+  soft "dnscrypt-proxy installed but 127.0.2.1:53 is not listening"
+fi
+
+if [[ -f /usr/local/share/ca-certificates/cloudflare-gateway.crt ]]; then
+  if openssl x509 -in /usr/local/share/ca-certificates/cloudflare-gateway.crt -noout -checkend 0 >/dev/null 2>&1; then
+    ok "Cloudflare Gateway CA present in system trust (CHG-013 optional)"
+  else
+    soft "Cloudflare Gateway CA on disk is expired — do not use the 2025-02-02 public PEM"
+  fi
+  if command -v certutil >/dev/null 2>&1 && certutil -d "sql:${HOME}/.pki/nssdb" -L 2>/dev/null | grep -qi 'Cloudflare Gateway'; then
+    ok "NSS ~/.pki/nssdb has Cloudflare Gateway"
+  else
+    soft "Gateway CA in system store but not in ~/.pki/nssdb (run ./scripts/install-cf-ca.sh)"
+  fi
+else
+  soft "Cloudflare Gateway CA not installed (optional CHG-013)"
+fi
+
 if command -v df >/dev/null 2>&1; then
   FREE="$(df -h / 2>/dev/null | awk 'NR==2 {print $4" free of "$2}')"
   ok "disk: ${FREE:-unknown}"

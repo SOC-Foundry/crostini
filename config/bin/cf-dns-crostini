@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# crostini · CHG-013 — pin penguin DNS to Cloudflare Families (1.1.1.3) DoH
+# Not Cloudflare One / Teams. Not host Chrome. Official WARP client is blocked here.
+set -euo pipefail
+
+MARKER="crostini · CHG-013"
+RESOLV="/etc/resolv.conf"
+RUN_RESOLV="/run/resolv.conf"
+STUB_SRC="${CF_DNS_RESOLV_SRC:-/usr/local/share/crostini/dnscrypt/resolv.conf}"
+
+log() { printf '==> %s\n' "$*"; }
+warn() { printf '!!  %s\n' "$*" >&2; }
+
+usage() {
+  cat <<'EOF'
+cf-dns-crostini — Cloudflare personal DNS (1.1.1.1 for Families, malware + adult) on penguin
+
+  cf-dns-crostini on      start dnscrypt-proxy, pin /etc/resolv.conf → 127.0.2.1
+  cf-dns-crostini off     restore Crostini resolver (hotel captive portal)
+  cf-dns-crostini status  stub, resolv.conf, sample lookup
+  cf-dns-crostini pin     only rewrite resolv.conf (used at boot)
+  cf-dns-crostini unpin   only restore the Crostini symlink
+
+Does not enroll Cloudflare One / Teams / Zero Trust.
+Does not protect Chrome OS host Chrome (Settings → Privacy → Use secure DNS).
+Official cloudflare-warp / warp-svc cannot run on this guest (no ip rule).
+EOF
+}
+
+need_sudo() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    return 0
+  fi
+  command -v sudo >/dev/null 2>&1 || { warn "sudo required"; exit 1; }
+}
+
+as_root() {
+  if [[ "$(id -u)" -eq 0 ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
+
+stub_text() {
+  if [[ -r "$STUB_SRC" ]]; then
+    cat "$STUB_SRC"
+    return 0
+  fi
+  cat <<EOF
+# ${MARKER} — Cloudflare 1.1.1.1 for Families (malware + adult, 1.1.1.3) via DoH
+# Hotel captive portal: cf-dns-crostini off
+nameserver 127.0.2.1
+options edns0
+EOF
+}
+
+resolv_is_ours() {
+  [[ -f "$RESOLV" && ! -L "$RESOLV" ]] && grep -q "$MARKER" "$RESOLV"
+}
+
+restore_run_resolv() {
+  # pin must not leave maitred's /run/resolv.conf as the stub (tee-follows-symlink)
+  if [[ -f "$RUN_RESOLV" ]] && grep -q "$MARKER" "$RUN_RESOLV"; then
+    printf '%s\n' 'nameserver 172.20.0.1' 'options single-request timeout:1 attempts:5' \
+      | as_root tee "$RUN_RESOLV" >/dev/null
+    log "restored $RUN_RESOLV to Crostini defaults (for hotel off)"
+  fi
+}
+
+cmd_pin() {
+  need_sudo
+  if resolv_is_ours; then
+    log "$RESOLV already pinned to 127.0.2.1"
+    restore_run_resolv
+    return 0
+  fi
+  local stamp dest
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  dest="${RESOLV}.bak.chg013.${stamp}"
+  as_root cp -a "$RESOLV" "$dest"
+  log "backed up $RESOLV → $dest"
+  # replace the symlink — do not tee through it (that writes /run/resolv.conf)
+  as_root rm -f "$RESOLV"
+  stub_text | as_root tee "$RESOLV" >/dev/null
+  as_root chmod 644 "$RESOLV"
+  restore_run_resolv
+  log "pinned $RESOLV → nameserver 127.0.2.1 (dnscrypt-proxy DoH)"
+}
+
+cmd_unpin() {
+  need_sudo
+  if [[ -L "$RESOLV" ]] && [[ "$(readlink "$RESOLV")" == "$RUN_RESOLV" ]]; then
+    log "$RESOLV already the Crostini symlink ($RUN_RESOLV)"
+    return 0
+  fi
+  local stamp dest
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  dest="${RESOLV}.bak.chg013.${stamp}"
+  as_root cp -a "$RESOLV" "$dest"
+  log "backed up $RESOLV → $dest"
+  as_root ln -sfn "$RUN_RESOLV" "$RESOLV"
+  log "restored $RESOLV → $RUN_RESOLV (hotel / host DNS)"
+}
+
+wait_stub() {
+  local i
+  for i in $(seq 1 20); do
+    if ss -lun 2>/dev/null | grep -q '127.0.2.1:53'; then
+      return 0
+    fi
+    sleep 0.25
+  done
+  return 1
+}
+
+cmd_on() {
+  need_sudo
+  if command -v systemctl >/dev/null 2>&1; then
+    as_root systemctl enable --now dnscrypt-proxy.socket
+    as_root systemctl start dnscrypt-proxy.service
+    as_root systemctl enable crostini-cf-dns.service 2>/dev/null || true
+  fi
+  if ! wait_stub; then
+    warn "dnscrypt-proxy is not listening on 127.0.2.1:53"
+    warn "check: systemctl status dnscrypt-proxy.socket dnscrypt-proxy.service"
+    exit 1
+  fi
+  cmd_pin
+  cmd_status
+}
+
+cmd_off() {
+  need_sudo
+  cmd_unpin
+  log "Complete the hotel portal in Chrome OS Chrome, then: cf-dns-crostini on"
+  cmd_status
+}
+
+lookup() {
+  if command -v getent >/dev/null 2>&1; then
+    getent hosts cloudflare.com 2>/dev/null | head -1 || true
+  fi
+}
+
+cmd_status() {
+  echo "--- resolv.conf ---"
+  if [[ -L "$RESOLV" ]]; then
+    echo "symlink → $(readlink "$RESOLV")"
+  elif [[ -e "$RESOLV" ]]; then
+    echo "regular file"
+  else
+    echo "(missing)"
+  fi
+  if [[ -r "$RESOLV" ]]; then
+    cat "$RESOLV"
+  fi
+  echo
+  echo "--- dnscrypt-proxy ---"
+  if command -v systemctl >/dev/null 2>&1; then
+    printf 'socket:  %s\n' "$(systemctl is-active dnscrypt-proxy.socket 2>/dev/null || echo n/a)"
+    printf 'service: %s\n' "$(systemctl is-active dnscrypt-proxy.service 2>/dev/null || echo n/a)"
+  fi
+  if ss -lun 2>/dev/null | grep -q '127.0.2.1:53'; then
+    echo "listen:  127.0.2.1:53"
+  else
+    echo "listen:  (not 127.0.2.1:53)"
+  fi
+  if [[ -r /etc/dnscrypt-proxy/dnscrypt-proxy.toml ]]; then
+    grep -E '^server_names' /etc/dnscrypt-proxy/dnscrypt-proxy.toml || true
+  fi
+  echo
+  echo "--- lookup cloudflare.com ---"
+  lookup || true
+  echo
+  if resolv_is_ours; then
+    echo "penguin DNS is Cloudflare Families (malware + adult, 1.1.1.3) DoH."
+  else
+    echo "penguin DNS is the Crostini/host resolver (hotel-visible)."
+  fi
+  echo "Host Chrome is separate: Settings → Privacy and security → Use secure DNS → Cloudflare."
+}
+
+main() {
+  case "${1:-}" in
+    on|connect) cmd_on ;;
+    off|disconnect) cmd_off ;;
+    pin) cmd_pin ;;
+    unpin) cmd_unpin ;;
+    status|"") cmd_status ;;
+    -h|--help|help) usage ;;
+    *)
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+main "$@"

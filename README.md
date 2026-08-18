@@ -45,11 +45,12 @@ If you already ship on Arch, you are not learning a new OS. You are remapping th
 |----------------|-------------|
 | Own the shell | **fish** + Tide |
 | Own the terminal | **Alacritty** |
-| Own the browser | **Island** (or any `.deb`) |
+| Own the browser | **Island** (work) · **Chromium** (personal Linux, CHG-014) |
 | Own chat | **WasIstLos** (WhatsApp Web shell) |
 | Own music | **Spotify** (apt + Crostini wrapper) |
 | Own the IDE | **Antigravity** (apt + Crostini GPU flags) |
 | Own git auth | **SSH ed25519** to personal GitHub (1Password agent, CHG-012) |
+| Own DNS on public Wi‑Fi | **Cloudflare 1.1.1.1 for Families** (DoH, CHG-013) |
 | Own agents | Optional **Grok Build** (permanent install) |
 
 Work stays in the VM: `~/.config/**`, `~/.local/**`, `/usr/local/bin`, apt. No dual-boot. No LUKS on the Chrome OS disk. Crosh is not the workstation.
@@ -208,6 +209,9 @@ Optional:
 ./scripts/install-antigravity.sh
 ./scripts/install-spotify.sh
 ./scripts/install-1password.sh
+./scripts/install-cf-dns.sh      # personal Cloudflare DNS (hotel / public Wi‑Fi)
+./scripts/install-chromium.sh    # personal Linux Chromium (not Island)
+./scripts/install-cf-ca.sh /path/to/certificate.pem   # optional Gateway CA + NSS
 ```
 
 ### What those scripts do
@@ -218,11 +222,14 @@ Optional:
 | `install-island.sh` | local Island `.deb` via apt |
 | `install-spotify.sh` | Spotify apt repo + wrapper + `.desktop` |
 | `install-1password.sh` | 1Password apt repo + wrapper + GitHub-only SSH agent |
+| `install-cf-dns.sh` | Cloudflare Families malware + adult DoH (`dnscrypt-proxy`, 1.1.1.3). Official WARP cannot run on Crostini. |
+| `install-chromium.sh` | Debian Chromium + Crostini wrapper (personal, not Island) |
+| `install-cf-ca.sh` | CHG-013 optional: Gateway CA → Debian trust + NSS (current PEM only) |
 | `install-antigravity.sh` | Antigravity apt repo + CLI + wrapper |
 | `install-grok.sh` | Grok binary (curl once) + PATH hooks |
 | `verify.sh` | one-shot checks (optional apps warn, do not fail) |
 
-Then open **Alacritty**, **Island**, **Spotify**, **Antigravity**, or **WasIstLos** from the Chrome OS **Linux apps** folder.
+Then open **Alacritty**, **Chromium**, **Island**, **Spotify**, **Antigravity**, or **WasIstLos** from the Chrome OS **Linux apps** folder.
 
 Manual commands for every step are in [§6](#6--chapters-chg-ledger). You do not need the scripts.
 
@@ -230,7 +237,7 @@ Manual commands for every step are in [§6](#6--chapters-chg-ledger). You do not
 
 ## 6 · Chapters (CHG ledger)
 
-Chapters are numbered in **apply order** on the seed host. First the machine is typeable (001–002). Then Linux apps: browser, chat, music (003, 004, 009). The editor uses the same Crostini GPU wrapper as Spotify (006). Disk is why those stacks fit (007). Git is how this repo got here (008). Personal GitHub private key leaves disk via 1Password SSH agent (012). Agents are optional (005). Hardware is guest `inxi` plus host crosh (010); the Alacritty banner prints both and lands in `~/projects/sf` (011).
+Chapters are numbered in **apply order** on the seed host. First the machine is typeable (001–002). Then Linux apps: browser, chat, music (003, 004, 009). The editor uses the same Crostini GPU wrapper as Spotify (006). Disk is why those stacks fit (007). Git is how this repo got here (008). Personal GitHub private key leaves disk via 1Password SSH agent (012). Hotel / public Wi‑Fi DNS is Cloudflare Families over DoH (013); official WARP cannot start on this guest. Personal Linux browser is Debian Chromium (014). Agents are optional (005). Hardware is guest `inxi` plus host crosh (010); the Alacritty banner prints both and lands in `~/projects/sf` (011).
 
 | CHG | Title | Applied | Risk |
 |-----|--------|---------|------|
@@ -246,6 +253,8 @@ Chapters are numbered in **apply order** on the seed host. First the machine is 
 | [010](#chg-010--inxi-hardware-probe) | inxi hardware probe | 2026-08-14 | Low |
 | [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner + `~/projects/sf` | 2026-08-14 | Low |
 | [012](#chg-012--1password-personal-github-ssh-agent) | 1Password · personal GitHub SSH agent | 2026-08-15 | Med |
+| [013](#chg-013--cloudflare-personal-dns) | Cloudflare personal DNS (Families DoH) | 2026-08-18 | Med |
+| [014](#chg-014--debian-chromium) | Debian Chromium (personal, 2 tabs) | 2026-08-18 | Low–Med |
 
 Longer write-ups: [`docs/chg00N-*.md`](docs/). Scripts: [`scripts/`](scripts/).
 
@@ -887,6 +896,94 @@ test ! -e ~/.ssh/id_ed25519
 
 ---
 
+### CHG-013 — Cloudflare personal DNS
+
+> Applied · 2026-08-18 · Med
+
+**Why this step.** Hotel DNS is hostile. Penguin inherits `172.20.0.1`. Official **WARP** (personal free) **cannot start** here: guest kernel has no `ip rule` (`RTM_GETRULE` → EOPNOTSUPP); `sudo` does not help. Applied: **`dnscrypt-proxy` DoH** to Families **1.1.1.3** (`cloudflare-family`). Not plaintext DHCP to 1.1.1.x. Not Zero Trust. Not host Chrome. Not a browser chapter (014).
+
+**Surfaces.** apt `dnscrypt-proxy` **2.1.8** · `/etc/dnscrypt-proxy/dnscrypt-proxy.toml` · `/etc/resolv.conf` (regular file → `127.0.2.1`) · `/usr/local/bin/cf-dns-crostini` · `crostini-cf-dns.service`
+
+**Script.** `./scripts/install-cf-dns.sh` (`install-warp.sh` execs the same).
+
+**Manual.**
+
+```bash
+sudo apt-get install -y --no-install-recommends dnscrypt-proxy ca-certificates
+sudo install -m 644 config/dnscrypt/dnscrypt-proxy.toml /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+sudo install -m 755 config/bin/cf-dns-crostini /usr/local/bin/cf-dns-crostini
+sudo install -m 644 config/systemd/crostini-cf-dns.service /etc/systemd/system/crostini-cf-dns.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now dnscrypt-proxy.socket
+sudo systemctl restart dnscrypt-proxy.service
+cf-dns-crostini on
+```
+
+Hotel portal: `cf-dns-crostini off` → complete portal in **Chrome OS Chrome** → `cf-dns-crostini on`.
+
+Host Chrome is separate: **Settings → Privacy and security → Use secure DNS → Cloudflare**. Do not enroll a work Cloudflare One / Teams org. Do not `tee` through the `/etc/resolv.conf` symlink (that overwrites `/run/resolv.conf`).
+
+`cdn-cgi/trace` showing `warp=off` is correct — there is no traffic tunnel.
+
+Long form (WARP attempt, `ip rule`, pin): [`docs/chg013-cloudflare-personal-dns.md`](docs/chg013-cloudflare-personal-dns.md).
+
+**Verify.**
+
+```bash
+dpkg-query -W dnscrypt-proxy
+ss -lun | grep 127.0.2.1:53
+grep 127.0.2.1 /etc/resolv.conf
+test ! -L /etc/resolv.conf
+sudo journalctl -u dnscrypt-proxy -n 15 --no-pager   # [cloudflare-family] OK (DoH)
+getent ahostsv4 cloudflare.com
+```
+
+**Backout.** `cf-dns-crostini off`. `sudo apt-get remove --purge -y dnscrypt-proxy` and remove the helper / pin unit.
+
+Optional Gateway CA (still this chapter, not 014): `./scripts/install-cf-ca.sh /path/to/certificate.pem` — needs a current Zero Trust PEM; public sample expired 2025-02-02.
+
+---
+
+### CHG-014 — Debian Chromium
+
+> Applied · 2026-08-18 · Low–Med
+
+**Why this step.** Island is work. Host Chrome is the personal Google profile on Flex. Penguin still needs a personal Linux-apps browser. **Firefox** loses here: no GPU, WebRender jank, Debian only has **ESR 140**. **Opera** is a Blink fork not in Debian — vendor repo, extra daemons, more RAM, no feature Chromium 150 lacks that host Chrome does not already cover. Applied: Debian **`chromium` 150** + X11 / no-GPU / no-sandbox wrapper. **Two tabs max** (guest RAM). Not a DNS/WARP chapter (that is 013).
+
+**Surfaces.** apt `chromium` **150.0.7871.100** · `/usr/bin/chromium` · `/usr/local/bin/chromium-crostini` · `/usr/local/share/crostini/chromium-2tab` · `/etc/chromium.d/crostini-2tab` · Linux apps **Chromium**
+
+**Script.** `./scripts/install-chromium.sh`
+
+**Manual.**
+
+```bash
+sudo apt-get install -y --no-install-recommends chromium
+sudo install -m 755 config/bin/chromium-crostini /usr/local/bin/chromium-crostini
+sudo ln -sfn /usr/local/bin/chromium-crostini /usr/local/bin/chromium
+sudo mkdir -p /usr/local/share/crostini/chromium-2tab /etc/chromium.d
+sudo install -m 644 config/chromium/2tab/* /usr/local/share/crostini/chromium-2tab/
+sudo install -m 644 config/chromium/chromium.d-crostini-2tab /etc/chromium.d/crostini-2tab
+sudo install -m 644 config/desktop/chromium.desktop /usr/share/applications/chromium.desktop
+```
+
+Personal only. Do not use for work SSO. No Widevine / no Google sync — host Chrome keeps those. `--password-store=basic`. A third tab is closed; the two most recently used stay.
+
+Long form: [`docs/chg014-chromium.md`](docs/chg014-chromium.md).
+
+**Verify.**
+
+```bash
+dpkg-query -W chromium
+test -x /usr/local/bin/chromium-crostini
+test -f /usr/local/share/crostini/chromium-2tab/manifest.json
+grep chromium-crostini /usr/share/applications/chromium.desktop
+chromium --version
+```
+
+**Backout.** `sudo apt-get remove --purge -y chromium chromium-common` and remove the wrapper / desktop files.
+
+---
+
 ## 7 · Repository layout
 
 ```text
@@ -898,7 +995,7 @@ docs/
   troubleshooting.md
   chg-ledger.md
   handoff.md              ← seed-host continuity
-  chg001-…chg011-*.md     ← chapter detail
+  chg001-…chg014-*.md     ← chapter detail
   archive/                ← legacy session dumps (do not use as source of truth)
 scripts/
   bootstrap.sh            ← CHG-001 · 002 · 010 · 011
@@ -908,14 +1005,20 @@ scripts/
   install-antigravity.sh  ← CHG-006
   install-spotify.sh      ← CHG-009
   install-1password.sh    ← CHG-012
+  install-cf-dns.sh       ← CHG-013
+  install-warp.sh         ← alias → install-cf-dns.sh
+  install-chromium.sh     ← CHG-014
+  install-cf-ca.sh        ← CHG-013 optional Gateway CA
   verify.sh
 config/
   alacritty/              # toml + host-specs.txt
   fish/conf.d/
-  bin/                    # antigravity · spotify · 1password · alacritty-crostini-banner
+  bin/                    # antigravity · spotify · 1password · alacritty-crostini-banner · cf-dns · chromium
   desktop/
   ssh/                    # GitHub-only IdentityAgent snippet
   spotify/prefs.high-quality
+  dnscrypt/               # Families DoH toml + resolv stub
+  systemd/                # crostini-cf-dns.service
 ```
 
 ---
@@ -931,6 +1034,8 @@ config/
 | Snap / Flatpak for this kit | Extra daemons; seed has neither |
 | Shipping vendor `.deb` blobs in git | License + size — stage locally |
 | Claiming “native Chromebook only” | **Flex on ordinary PCs is first-class** |
+| Official Cloudflare WARP tunnel on penguin | Guest kernel has no `ip rule`; Crostini `100.115/172.20` must stay on eth0 |
+| Chrome OS host WARP / host partition DNS | Wrong layer; host **Use secure DNS** is Settings-only |
 
 ---
 
@@ -952,6 +1057,8 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | 2026-08-14 | [010](#chg-010--inxi-hardware-probe) | inxi **3.3.38** · VM `inxi -MCzm` · host crosh `battery_test` / `storage_status` | Applied | Low | `inxi` · `dmidecode` · crosh |
 | 2026-08-14 | [011](#chg-011--alacritty-banner--projectssf) | Alacritty banner: VM+host specs · land **`~/projects/sf`** | Applied | Low | `alacritty-crostini-banner` · `host-specs.txt` |
 | 2026-08-15 | [012](#chg-012--1password-personal-github-ssh-agent) | 1Password desktop · personal GitHub SSH agent | Applied | Med | `1password` · `1password-crostini` · `~/.ssh/config` |
+| 2026-08-18 | [013](#chg-013--cloudflare-personal-dns) | Cloudflare 1.1.1.1 for Families (malware + adult, 1.1.1.3) DoH; official WARP blocked | Applied | Med | `dnscrypt-proxy` · `cf-dns-crostini` · `/etc/resolv.conf` |
+| 2026-08-18 | [014](#chg-014--debian-chromium) | Debian Chromium **150** personal Linux browser, 2 tabs | Applied | Low–Med | `chromium` · `chromium-crostini` · `chromium-2tab` |
 
 ### Software inventory (seed, post-changelog)
 
@@ -960,7 +1067,8 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | `fish` 4.x · Tide · done | Shell |
 | `alacritty` · `fastfetch` | Terminal |
 | `git` · `openssh-client` | SCM |
-| `island-browser` | Browser |
+| `island-browser` | Work browser (Workspace / Zoom / Slack) |
+| `chromium` **150.0.7871.100** · `chromium-crostini` | Personal Linux browser (2 tabs) |
 | `wasistlos` | WhatsApp |
 | `spotify-client` **1.2.95.453** · `spotify-crostini` | Music |
 | `antigravity` · `agy` | IDE + agent CLI |
@@ -968,12 +1076,13 @@ Complete ledger for the seed host **`penguin`** (Dell Latitude 7200 · Chrome OS
 | `fonts-powerline` · emoji fonts | Prompt glyphs |
 | `inxi` **3.3.38** · `dmidecode` | Guest probe (`inxi -MCzm`); host specs via crosh |
 | `1password` **8.12.32** · `1password-cli` **2.39.0** · `1password-crostini` | Personal GitHub SSH agent (github.com only) |
+| `dnscrypt-proxy` **2.1.8** · `cf-dns-crostini` | Personal Cloudflare Families malware + adult DoH (1.1.1.3 → 127.0.2.1) |
 
-That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fish, opens Alacritty, and can launch Island, WhatsApp, Spotify, Antigravity, and 1Password from **Linux apps**. Guest CPU via inxi is i7-8665U; chassis string is crosvm.
+That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fish, opens Alacritty, and can launch Chromium, Island, WhatsApp, Spotify, Antigravity, and 1Password from **Linux apps**. Guest CPU via inxi is i7-8665U; chassis string is crosvm. Penguin DNS on public Wi‑Fi is Cloudflare Families over DoH.
 
 ### Next free
 
-**CHG-013** — Nerd Font pin for Tide · Share with Linux runbook.
+**CHG-015** — Nerd Font pin for Tide · Share with Linux runbook.
 
 ---
 
@@ -986,6 +1095,8 @@ That table is the current seed: a Flex Latitude 7200 whose Linux VM boots to fis
 - Music: [Spotify for Linux](https://www.spotify.com/us/download/linux/)  
 - Vault / SSH agent: [1Password for Linux](https://support.1password.com/install-linux/)  
 - Hardware probe: [inxi](https://smxi.org/docs/inxi.htm) (guest); crosh on the host  
+- DNS: [1.1.1.1 for Families](https://developers.cloudflare.com/1.1.1.1/1.1.1.1-for-families/) via [dnscrypt-proxy](https://github.com/DNSCrypt/dnscrypt-proxy) (official WARP client cannot run on Crostini)  
+- Personal Linux browser: Debian [Chromium](https://wiki.debian.org/Chromium)  
 
 ---
 
@@ -995,4 +1106,4 @@ MIT. Config and scripts are free to copy. Do not commit secrets, private keys, o
 
 ---
 
-<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-15 · CHG-001…012</sub>
+<sub>Seed · penguin · Latitude 7200 · Flex · 2026-08-12 → 2026-08-18 · CHG-001…014</sub>

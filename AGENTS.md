@@ -25,6 +25,8 @@ Do **not**:
 - Open personal GitHub, this kit, or vault sign-in inside Island
 - Treat Island as “the Linux browser” for passkeys, git, or agent work
 - Point `Host *` or a global `SSH_AUTH_SOCK` at a personal vault agent
+- Enroll penguin in a work **Cloudflare One / Teams / WARP** organization (CHG-013 is personal 1.1.1.1 DNS only)
+- Install a **work** Gateway inspection CA (optional CHG-013) unless the operator supplied that PEM on purpose — it can decrypt later penguin TLS
 
 Personal git/SSH (CHG-008 / CHG-012) is for this operator’s **personal** GitHub only. Do not route work remotes through that agent.
 

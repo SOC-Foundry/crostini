@@ -16,8 +16,10 @@ Canonical IDs match the root [README](../README.md). Apply order = chapter numbe
 | CHG-010 | inxi hardware probe (VM `inxi -MCzm` · host crosh) | 2026-08-14 | Applied | Low | [chg010-inxi-hardware.md](chg010-inxi-hardware.md) |
 | CHG-011 | Alacritty banner inxi + land `~/projects/sf` | 2026-08-14 | Applied | Low | [chg011-alacritty-inxi-landing.md](chg011-alacritty-inxi-landing.md) |
 | CHG-012 | 1Password · personal GitHub SSH agent | 2026-08-15 | Applied | Med | [chg012-1password-ssh-agent.md](chg012-1password-ssh-agent.md) |
+| CHG-013 | Cloudflare personal DNS (Families DoH; WARP blocked) | 2026-08-18 | Applied | Med | [chg013-cloudflare-personal-dns.md](chg013-cloudflare-personal-dns.md) |
+| CHG-014 | Debian Chromium (personal Linux browser, 2 tabs) | 2026-08-18 | Applied | Low–Med | [chg014-chromium.md](chg014-chromium.md) |
 
-**Next free:** CHG-013.
+**Next free:** CHG-015.
 
 Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md](disk-and-persistence.md) · [troubleshooting.md](troubleshooting.md) · [archive/](archive/)
 
@@ -25,4 +27,4 @@ Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md]
 
 | ID | Topic |
 |----|--------|
-| 013+ | Nerd Font · Share with Linux runbook |
+| 015+ | Nerd Font · Share with Linux runbook |

@@ -1,0 +1,2 @@
+# crostini · CHG-014 — load the 2-tab cap (Debian launcher whitelists this path)
+CHROMIUM_FLAGS="$CHROMIUM_FLAGS --load-extension=/usr/local/share/crostini/chromium-2tab"

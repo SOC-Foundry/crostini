@@ -154,3 +154,70 @@ Same as other Electron apps. Use the kit wrapper (`1password-crostini`). Restart
 ## 1Password agent answers a non-GitHub host
 
 `~/.ssh/config` must not use `Host *`. Restore `~/.ssh/config.bak.chg012.*` and re-run `./scripts/install-1password.sh`.
+
+## Hotel / public Wi‑Fi: no Linux DNS, or portal will not load
+
+Complete the captive portal in **Chrome OS Chrome** first. Then:
+
+```bash
+cf-dns-crostini off    # penguin uses 172.20.0.1 again
+# finish portal if needed
+cf-dns-crostini on     # back to Cloudflare DoH
+```
+
+Do not expect official `warp-cli connect` to work. See CHG-013.
+
+## warp-cli: Unable to connect to the CloudflareWARP daemon
+
+Expected on this guest. `ip rule list` is `Operation not supported`. `warp-svc` never binds `/run/cloudflare-warp/warp_service`. Use `cf-dns-crostini` (dnscrypt-proxy → `cloudflare-family`, 1.1.1.3). Do not enroll a work Teams org.
+
+## penguin DNS still 172.20.0.1 after install
+
+`/etc/resolv.conf` is still the Crostini symlink. `tee` through that symlink writes `/run/resolv.conf` and maitred will overwrite it.
+
+```bash
+ls -l /etc/resolv.conf    # want a regular file, not → /run/resolv.conf
+cf-dns-crostini on
+```
+
+## dnscrypt-proxy live server is `cloudflare` or `cloudflare-security`, not `cloudflare-family`
+
+Want `server_names = ['cloudflare-family']` (1.1.1.3). Config was replaced while the service was already up, or the first pin was malware-only. Restart after the toml:
+
+```bash
+grep server_names /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+sudo systemctl restart dnscrypt-proxy.service
+sudo journalctl -u dnscrypt-proxy -n 15 --no-pager
+# want: [cloudflare-family] OK (DoH)
+```
+
+## apt prints D-Bus LimitsExceeded (UID 0)
+
+Crostini `maitred` holds the system bus `max_connections_per_user` (256) as root. Noisy; packages still install. Not the WARP hang.
+
+## Chromium missing from Linux apps / blank window
+
+Same CEF/DRM class as Spotify. Use the wrapper:
+
+```bash
+./scripts/install-chromium.sh
+chromium &
+grep ^Exec= /usr/share/applications/chromium.desktop
+# want: Exec=/usr/local/bin/chromium-crostini %U
+```
+
+Personal only. Island stays work. **Two tabs max** (wrapper loads `/usr/local/share/crostini/chromium-2tab`). A third tab is closed; the two most recently used stay. Launch `chromium` / Linux apps — **not** `/usr/bin/chromium` (Debian launcher drops the cap). If the icon is missing: **Settings → Developers → Linux → Restart**.
+
+## Chrome / Island NET::ERR_CERT_AUTHORITY_INVALID with WARP / Gateway
+
+This is **CHG-013**, not the Chromium chapter. Consumer 1.1.1.1 DoH does not need a custom CA. Gateway TLS inspection does.
+
+The public `Cloudflare_CA.pem` **expired 2025-02-02**. Download a current `.pem` from Zero Trust → Certificates, stage it into Linux files, then:
+
+```bash
+./scripts/install-cf-ca.sh /path/to/certificate.pem
+```
+
+Restart Island. Host Chrome OS is a separate certificate UI.
+
+Do not enroll a work Teams org on penguin. Official `warp-svc` still cannot start here (no `ip rule`).

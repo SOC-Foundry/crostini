@@ -1,3 +1,8 @@
 # vendor browser packages — do not commit
 *.deb
 island-browser-stable_*.deb
+
+# org-specific Cloudflare Gateway CAs (CHG-013 optional) — never commit
+/certificate.pem
+/Cloudflare_CA.pem
+/config/certs/*
