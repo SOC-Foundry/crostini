@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# crostini · CHG-015 — open btop in Alacritty (vendor desktop uses Terminal=true)
+set -euo pipefail
+
+if [[ ! -x /usr/bin/btop ]]; then
+  printf '%s\n' 'btop missing — CHG-015: ./scripts/install-btop.sh' >&2
+  exit 1
+fi
+if [[ ! -x /usr/bin/alacritty ]]; then
+  printf '%s\n' 'alacritty missing — CHG-002' >&2
+  exit 1
+fi
+
+exec /usr/bin/alacritty --title btop --class btop -e /usr/bin/btop "$@"

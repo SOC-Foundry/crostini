@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=btop
+GenericName=System Monitor
+Comment=Guest CPU / RAM / disk / net (Alacritty). Not host crosh.
+Exec=/usr/local/bin/btop-crostini
+TryExec=/usr/local/bin/btop-crostini
+Icon=btop
+Terminal=false
+StartupNotify=true
+StartupWMClass=btop
+Categories=System;Monitor;
+Keywords=system;process;task;cpu;memory;

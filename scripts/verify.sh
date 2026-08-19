@@ -193,6 +193,26 @@ elif dpkg -s chromium >/dev/null 2>&1; then
   soft "chromium 2-tab cap missing (re-run ./scripts/install-chromium.sh)"
 fi
 
+if dpkg -s btop >/dev/null 2>&1 && [[ -x /usr/local/bin/btop-crostini ]]; then
+  ok "btop: $(dpkg-query -W -f '${Version}' btop 2>/dev/null || echo present) (crostini wrapper)"
+elif command -v btop >/dev/null 2>&1; then
+  soft "btop on PATH but wrapper missing (run ./scripts/install-btop.sh)"
+else
+  soft "btop missing (optional CHG-015)"
+fi
+
+if [[ -f /usr/share/applications/btop.desktop ]] && grep -q btop-crostini /usr/share/applications/btop.desktop; then
+  ok "btop.desktop uses Alacritty wrapper"
+elif [[ -f /usr/share/applications/btop.desktop ]]; then
+  soft "btop.desktop present but not the CHG-015 wrapper (Chrome OS Terminal=true)"
+fi
+
+if [[ -f "${HOME}/.config/btop/btop.conf" ]] && grep -q 'use_fstab = False' "${HOME}/.config/btop/btop.conf"; then
+  ok "btop use_fstab=False (no /etc/fstab on penguin)"
+elif dpkg -s btop >/dev/null 2>&1; then
+  soft "btop.conf missing use_fstab=False (re-run ./scripts/install-btop.sh)"
+fi
+
 if dpkg -s dnscrypt-proxy >/dev/null 2>&1 && [[ -x /usr/local/bin/cf-dns-crostini ]]; then
   ok "dnscrypt-proxy: $(dpkg-query -W -f '${Version}' dnscrypt-proxy 2>/dev/null || echo present) (cf-dns-crostini)"
 elif command -v dnscrypt-proxy >/dev/null 2>&1 || dpkg -s dnscrypt-proxy >/dev/null 2>&1; then

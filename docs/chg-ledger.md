@@ -18,8 +18,9 @@ Canonical IDs match the root [README](../README.md). Apply order = chapter numbe
 | CHG-012 | 1Password · personal GitHub SSH agent | 2026-08-15 | Applied | Med | [chg012-1password-ssh-agent.md](chg012-1password-ssh-agent.md) |
 | CHG-013 | Cloudflare personal DNS (Families DoH; WARP blocked) | 2026-08-18 | Applied | Med | [chg013-cloudflare-personal-dns.md](chg013-cloudflare-personal-dns.md) |
 | CHG-014 | Debian Chromium (personal Linux browser, 2 tabs) | 2026-08-18 | Applied | Low–Med | [chg014-chromium.md](chg014-chromium.md) |
+| CHG-015 | btop (guest resource TUI · Alacritty launcher) | 2026-08-18 | Applied | Low | [chg015-btop.md](chg015-btop.md) |
 
-**Next free:** CHG-015.
+**Next free:** CHG-016.
 
 Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md](disk-and-persistence.md) · [troubleshooting.md](troubleshooting.md) · [archive/](archive/)
 
@@ -27,4 +28,4 @@ Supporting docs: [architecture.md](architecture.md) · [disk-and-persistence.md]
 
 | ID | Topic |
 |----|--------|
-| 015+ | Nerd Font · Share with Linux runbook |
+| 016+ | Nerd Font · Share with Linux runbook |

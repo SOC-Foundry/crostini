@@ -102,6 +102,33 @@ Wrapper must pass `--audio-api=pulseaudio`. Chrome OS volume / mute is host-owne
 
 Very High (~320 kbit/s) is `audio.play_bitrate_enumeration=4` in `~/.config/spotify/Users/*/prefs` (Premium). Re-run `./scripts/install-spotify.sh` after first sign-in, or set **Settings → Audio Quality → Very high**. Do not commit that prefs file.
 
+## btop: command not found
+
+```bash
+./scripts/install-btop.sh
+btop --version
+```
+
+## btop from Linux apps opens Chrome OS Terminal
+
+Vendor `btop.desktop` is `Terminal=true`. The kit wrapper must be on `Exec=`:
+
+```bash
+grep ^Exec= /usr/share/applications/btop.desktop
+# want: Exec=/usr/local/bin/btop-crostini
+./scripts/install-btop.sh
+```
+
+Then **Settings → Developers → Linux → Restart**. `apt upgrade` of `btop` can restore the vendor file.
+
+## btop GPU / temp empty; battery looks wrong
+
+Expected on penguin. No DRM, no useful hwmon. Host battery: crosh `battery_test 1`. Host chassis: CHG-010 / crosh, not btop. `btop.log` may still say `No good candidate for cpu sensor` even with `check_temp = False` — probe happens at start; ignore it.
+
+## btop.log: filesystem error [/etc/fstab]
+
+Crostini has no `/etc/fstab`. Want `use_fstab = False` in `~/.config/btop/btop.conf`. Re-run `./scripts/install-btop.sh`. Do not invent an fstab.
+
 ## inxi: command not found
 
 ```bash

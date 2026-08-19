@@ -4,8 +4,8 @@
 |---|---|
 | Host | `penguin` · Chrome OS Flex · Debian 13 Crostini · Dell Latitude 7200 |
 | Kit | this repo · `~/projects/sf/crostini` |
-| Applied | **CHG-001 … CHG-014** (see README changelog) |
-| Next free | **CHG-015** |
+| Applied | **CHG-001 … CHG-015** (see README changelog) |
+| Next free | **CHG-016** |
 
 ## Grok resume (if using Grok Build)
 
@@ -32,6 +32,7 @@ Historical omarchy-cwd session (pre-kit focus): `019ff5cd-60a4-7ba3-980c-ad03513
 | Music | spotify-client 1.2.95.453 + crostini wrapper |
 | Git | personal GitHub via 1Password SSH agent (CHG-012) |
 | Hardware probe | inxi 3.3.38 + dmidecode · `inxi -MC` (no sudo) |
+| Resource TUI | btop 1.3.2 + Alacritty launcher (CHG-015). Guest CPU/RAM/disk/net; host battery via crosh. |
 | DNS | Cloudflare 1.1.1.1 for Families (malware + adult, 1.1.1.3) via dnscrypt-proxy DoH (CHG-013). Official WARP blocked (no `ip rule`). |
 
 ## Agent policy

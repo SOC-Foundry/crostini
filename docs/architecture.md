@@ -39,10 +39,12 @@
 - Spotify also forces `--audio-api=pulseaudio` so it uses the guest PipeWire-Pulse socket
 - Island on seed Flex host: no extra GPU flags required
 - Chromium (CHG-014): personal Linux browser, **two tabs max**. Wrapper execs `/usr/lib/chromium/chromium` (not Debian `/usr/bin/chromium`) with X11 + `--disable-gpu` + `--no-sandbox` + `--password-store=basic` + the 2-tab extension. Not Island. Not CHG-013.
+- btop (CHG-015): Linux apps launcher execs `/usr/local/bin/btop-crostini` → Alacritty `-e /usr/bin/btop`. Vendor `Terminal=true` would open Chrome OS Terminal. In-terminal `btop` is the Debian binary. Config pins `use_fstab = False` (penguin has no `/etc/fstab`).
 
 ## Hardware inventory
 
 - Guest: `inxi -MC` (CHG-010, no sudo). `-M` is **crosvm / ChromiumOS**. `-C` is the host CPUID (seed: i7-8665U).
+- Live guest load: `btop` (CHG-015). CPU / RAM / disk / net are penguin. No GPU. Temps usually empty. Battery, if shown, is virtio — crosh `battery_test 1` is the host check.
 - Host model, SSD, battery, WLAN: Chrome OS About / `chrome://system` / crosh. Not apt. Do not install `lshw` expecting a Latitude dump.
 
 ## Shared files

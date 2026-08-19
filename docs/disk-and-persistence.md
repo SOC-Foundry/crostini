@@ -18,6 +18,7 @@ Seed host (`penguin`, Latitude 7200 · Flex) resized **10 GiB → 213 GiB** 
 | + WasIstLos (WebKit) | multi-hundred MiB deps |
 | + Spotify | package ~170 MiB download; cache grows under `~/.cache/spotify` |
 | + Debian Chromium (CHG-014) | ~386 MiB install; keep **2 tabs**; close Island if RAM is tight |
+| + btop (CHG-015) | ~1.6 MiB; TUI only |
 | + dnscrypt-proxy (CHG-013) | small; DoH stub, not WARP |
 | Projects + toolchains | plan 20 GiB+ |
 
